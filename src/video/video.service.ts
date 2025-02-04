@@ -1,16 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { CreateImagesFromVideoDto } from './dto/create-images-from-video.dto';
 import * as ffmpeg from 'fluent-ffmpeg';
 import * as archiver from 'archiver';
 import * as fs from 'fs-extra';
 import { join } from 'path';
+import { Video, VideoDocument } from './schemas/video.schema';
 
 @Injectable()
 export class VideoService {
-  constructor(@InjectModel('Video') private readonly videoModel: Model<any>) {}
+  constructor(
+    @InjectModel(Video.name) private readonly videoModel: Model<VideoDocument>,
+  ) {}
 
   async findById(id: string) {
     return await this.videoModel.findById(id).exec();
@@ -25,16 +28,16 @@ export class VideoService {
     createImagesFromVideoDto: CreateImagesFromVideoDto,
   ) {
     try {
-      // Find the video document by ID
-      const video = await this.videoModel.findById(
-        createImagesFromVideoDto._id,
-      );
+      // Find the video document by user_id
+      const video = await this.videoModel.findOne({
+        user_id: createImagesFromVideoDto.user_id,
+      });
       if (!video) {
         throw new Error('Video not found');
       }
 
       // Create temporary directories
-      const tempDir = join(process.cwd(), 'temp', createImagesFromVideoDto._id);
+      const tempDir = join(process.cwd(), 'temp', createImagesFromVideoDto._id.toString());
       const framesDir = join(tempDir, 'frames');
       await fs.ensureDir(framesDir);
 
