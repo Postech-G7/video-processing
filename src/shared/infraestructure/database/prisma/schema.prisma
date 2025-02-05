@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VideoStatus {
+  processing
+  completed
+  failed
+  retrieved
+}
+
+model Video {
+  id        String      @id @db.Uuid
+  title     String      @db.VarChar(255)
+  userEmail String      @db.VarChar(255)
+  status    VideoStatus @default(processing)
+  path      String?     @db.VarChar(255)
+  createdAt DateTime    @default(now())
+
+  @@map("videos")
+}
