@@ -10,6 +10,8 @@ import {
   HttpCode,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { DeleteProcessedVideoUseCase } from '../application/usecases/delete-processed-video.usecase';
 import { RetrieveProcessedVideoUseCase } from '../application/usecases/retrieve-processed-video.usecase';
@@ -21,7 +23,6 @@ import { UpdateVideoUseCase } from '../application/usecases/update-video';
 import { ListVideosUseCase } from '../application/usecases/list-videos.usecase';
 
 import { ListVideosDto } from './dtos/list-videos.dto';
-//   import { RetrieveProcessedVideoDto } from './dtos/retrieve-processed-video.dto';
 import { UpdateVideoDto } from './dtos/update-video.dto';
 import { UploadProcessedVideoDto } from './dtos/upload-processed-video.dto';
 import { UploadVideoDto } from './dtos/upload-video.dto';
@@ -38,7 +39,10 @@ import {
   ApiResponse,
   ApiTags,
   getSchemaPath,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Videos')
 @Controller('videos')
@@ -93,7 +97,7 @@ export class VideosController {
   @HttpCode(201)
   @Post('upload-processed')
   async uploadProcessed(
-    @Body() uploadProcessedVideoDto: UploadProcessedVideoDto
+    @Body() uploadProcessedVideoDto: UploadProcessedVideoDto,
   ) {
     return this.uploadProcessedVideoUseCase.execute(uploadProcessedVideoDto);
   }
@@ -155,7 +159,7 @@ export class VideosController {
   @Patch(':id/status')
   async updateStatus(
     @Param('id') id: string,
-    @Body() updateVideoDto: UpdateVideoDto
+    @Body() updateVideoDto: UpdateVideoDto,
   ) {
     return this.updateVideoUseCase.execute({ id, ...updateVideoDto });
   }
@@ -164,6 +168,29 @@ export class VideosController {
   @Post('process/:id')
   async process(@Param('id') id: string) {
     return this.processVideoUseCase.execute({ id });
+  }
+
+  @Post('upload-and-process')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  async uploadAndProcess(@UploadedFile() file: Express.Multer.File) {
+    const uploadResult = await this.uploadVideoUseCase.execute({
+      file,
+      jwtToken: 'dummy-token', // Since we removed auth, we'll use a dummy token
+    });
+
+    return this.processVideoUseCase.execute({ id: uploadResult.id });
   }
 }
 

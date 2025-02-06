@@ -6,9 +6,8 @@ export type VideoProps = {
   title: string;
   createdAt?: Date;
   status: 'processing' | 'completed' | 'failed' | 'retrieved';
-  userId: string;
   userEmail: string;
-  base64: string;
+  path?: string;
 };
 
 export class VideoEntity extends Entity<VideoProps> {
@@ -30,10 +29,6 @@ export class VideoEntity extends Entity<VideoProps> {
     this.props.status = value;
   }
 
-  get base64(): string {
-    return this.props.base64;
-  }
-
   get title(): string {
     return this.props.title;
   }
@@ -46,11 +41,11 @@ export class VideoEntity extends Entity<VideoProps> {
     return this.props.status;
   }
 
-  get userId(): string {
-    return this.props.userId;
-  }
-
   get userEmail(): string {
     return this.props.userEmail;
+  }
+
+  get path(): string | undefined {
+    return this.props.path;
   }
 }

@@ -4,6 +4,8 @@ import { BadRequestError } from '../../../shared/application/errors/bad-request-
 import { UseCase as DefaultUseCase } from '../../../shared/application/providers/usecases/use-case';
 import { VideoEntity } from '../../domain/entities/video.entity';
 import { AuthService } from 'src/auth/infraestructure/auth.service';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 export namespace UploadVideoUseCase {
   export type Input = {
@@ -31,11 +33,17 @@ export namespace UploadVideoUseCase {
         id: string;
       }>(jwtToken);
 
+      // Save file to disk
+      const uploadDir = path.join(process.cwd(), 'uploads');
+      await fs.mkdir(uploadDir, { recursive: true });
+      const fileName = `${Date.now()}-${file.originalname}`;
+      const filePath = path.join(uploadDir, fileName);
+      await fs.writeFile(filePath, file.buffer);
+
       const videoEntity = new VideoEntity({
         title: file.originalname,
         userEmail: decodedToken.email,
-        base64: file.buffer.toString('base64'),
-        userId: decodedToken.id,
+        path: filePath,
         status: 'processing',
         createdAt: new Date(),
       });

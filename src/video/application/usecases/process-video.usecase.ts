@@ -80,8 +80,8 @@ export namespace ProcessVideoUseCase {
       const videoPath = path.join(tempDir, 'video.mp4');
 
       try {
-        // Write base64 to temp file
-        const videoBuffer = Buffer.from(video.base64, 'base64');
+        // Read video file from path
+        const videoBuffer = await fs.promises.readFile(video.path);
         fs.writeFileSync(videoPath, videoBuffer);
 
         // Process video and generate screenshots
@@ -91,7 +91,7 @@ export namespace ProcessVideoUseCase {
         const zipPath = await this.createZipFile(screenshots, tempDir);
 
         // Update video status to processed
-        video.updateStatus('processed');
+        video.updateStatus('completed');
         await this.videoRepository.update(video);
 
         // Cleanup temporary files
@@ -101,7 +101,7 @@ export namespace ProcessVideoUseCase {
         this.cleanup(tempDir);
         
         // Update video status to error
-        video.updateStatus('error');
+        video.updateStatus('failed');
         await this.videoRepository.update(video);
         
         throw error;

@@ -1,13 +1,23 @@
-import { Storage } from '@google-cloud/storage';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
-const BUCKET_NAME = process.env.GCLOUD_STORAGE_BUCKET;
+const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
-const storage = new Storage({
-  projectId: process.env.GCLOUD_PROJECT_ID,
-  keyFilename: process.env.GCLOUD_KEY_FILENAME,
-});
+// Create uploads directory if it doesn't exist
+fs.mkdir(UPLOAD_DIR, { recursive: true }).catch(console.error);
 
 export const cloudStorage = {
-  storage,
-  bucket: storage.bucket(BUCKET_NAME),
+  async upload(filePath: string, destination: string): Promise<string> {
+    const finalPath = path.join(UPLOAD_DIR, destination);
+    await fs.copyFile(filePath, finalPath);
+    return finalPath;
+  },
+  
+  async download(filePath: string): Promise<Buffer> {
+    return fs.readFile(filePath);
+  },
+  
+  async delete(filePath: string): Promise<void> {
+    await fs.unlink(filePath);
+  }
 };
