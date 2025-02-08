@@ -2,7 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteFile = exports.download = exports.upload = exports.cloudStorage = void 0;
 const storage_1 = require("@google-cloud/storage");
-const storage = new storage_1.Storage();
+const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS || '{}');
+const storage = new storage_1.Storage({
+    projectId: process.env.GCLOUD_PROJECT_ID,
+    credentials: credentials,
+});
 const UPLOAD_DIR = process.env.GCLOUD_STORAGE_BUCKET || '';
 exports.cloudStorage = storage.bucket(UPLOAD_DIR);
 const upload = async (filePath, destination) => {

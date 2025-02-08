@@ -40,19 +40,18 @@ exports.ProcessVideoUseCase = void 0;
 const fluent_ffmpeg_1 = __importDefault(require("fluent-ffmpeg"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const archiver_1 = __importDefault(require("archiver"));
+const adm_zip_1 = __importDefault(require("adm-zip"));
 const bad_request_error_1 = require("../../../shared/application/errors/bad-request-error");
+const cloud_storage_config_1 = require("../../../shared/infraestructure/storage/config/cloud-storage.config");
 var ProcessVideoUseCase;
 (function (ProcessVideoUseCase) {
     class UseCase {
         constructor(videoRepository) {
             this.videoRepository = videoRepository;
         }
-        createTempDir(id) {
+        async createTempDir(id) {
             const tempDir = path.join(process.cwd(), 'temp', id);
-            if (!fs.existsSync(tempDir)) {
-                fs.mkdirSync(tempDir, { recursive: true });
-            }
+            await fs.promises.mkdir(tempDir, { recursive: true });
             return tempDir;
         }
         async processVideo(videoPath, outputDir) {
@@ -61,35 +60,27 @@ var ProcessVideoUseCase;
                 (0, fluent_ffmpeg_1.default)(videoPath)
                     .on('end', () => resolve(screenshots))
                     .on('error', (err) => reject(err))
-                    .on('progress', (progress) => {
-                    const screenshotPath = path.join(outputDir, `screenshot-${progress.frames}.png`);
-                    screenshots.push(screenshotPath);
+                    .on('screenshot', (filename) => {
+                    screenshots.push(path.join(outputDir, filename));
                 })
                     .screenshots({
-                    count: 30,
+                    count: 3,
                     folder: outputDir,
                     filename: 'screenshot-%i.png',
                 });
             });
         }
         async createZipFile(screenshots, outputDir) {
-            const zipPath = path.join(outputDir, 'screenshots.zip');
-            const output = fs.createWriteStream(zipPath);
-            const archive = (0, archiver_1.default)('zip', { zlib: { level: 9 } });
-            return new Promise((resolve, reject) => {
-                output.on('close', () => resolve(zipPath));
-                archive.on('error', (err) => reject(err));
-                archive.pipe(output);
-                screenshots.forEach((screenshot) => {
-                    archive.file(screenshot, { name: path.basename(screenshot) });
-                });
-                archive.finalize();
+            const zip = new adm_zip_1.default();
+            screenshots.forEach((screenshot) => {
+                zip.addLocalFile(screenshot);
             });
+            const zipPath = path.join(outputDir, 'screenshots.zip');
+            zip.writeZip(zipPath);
+            return zipPath;
         }
         cleanup(tempDir) {
-            if (fs.existsSync(tempDir)) {
-                fs.rmSync(tempDir, { recursive: true, force: true });
-            }
+            fs.rmSync(tempDir, { recursive: true, force: true });
         }
         async execute(input) {
             const { id } = input;
@@ -97,16 +88,19 @@ var ProcessVideoUseCase;
             if (!video) {
                 throw new bad_request_error_1.BadRequestError('Video not found');
             }
-            const tempDir = this.createTempDir(id);
-            const videoPath = path.join(tempDir, 'video.mp4');
+            const tempDir = await this.createTempDir(id);
+            const videoPath = path.join(tempDir, path.basename(video.path));
             try {
                 const videoBuffer = await fs.promises.readFile(video.path);
                 fs.writeFileSync(videoPath, videoBuffer);
                 const screenshots = await this.processVideo(videoPath, tempDir);
                 const zipPath = await this.createZipFile(screenshots, tempDir);
+                const destination = `screenshots/${id}/screenshots.zip`;
+                const zipUrl = await (0, cloud_storage_config_1.upload)(zipPath, destination);
                 video.updateStatus('completed');
                 await this.videoRepository.update(video);
                 this.cleanup(tempDir);
+                return { zipUrl };
             }
             catch (error) {
                 this.cleanup(tempDir);

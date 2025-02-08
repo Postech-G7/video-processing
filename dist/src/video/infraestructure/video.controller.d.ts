@@ -1,3 +1,4 @@
+import { ProcessVideoUseCase } from '../application/usecases/process-video.usecase';
 import { ListVideosUseCase } from '../application/usecases/list-videos.usecase';
 import { ListVideosDto } from './dtos/list-videos.dto';
 import { UpdateVideoDto } from './dtos/update-video.dto';
@@ -24,5 +25,5 @@ export declare class VideosController {
     deleteProcessed(id: string): Promise<void>;
     list(listVideosDto: ListVideosDto): Promise<VideoCollectionPresenter>;
     updateStatus(id: string, updateVideoDto: UpdateVideoDto): Promise<VideoOutput>;
-    process(id: string): Promise<void>;
+    process(id: string): Promise<ProcessVideoUseCase.Output>;
 }

@@ -4,7 +4,9 @@ export declare namespace ProcessVideoUseCase {
     type Input = {
         id: string;
     };
-    type Output = void;
+    type Output = {
+        zipUrl: string;
+    };
     class UseCase implements DefaultUseCase<Input, Output> {
         private videoRepository;
         constructor(videoRepository: VideoRepository.Repository);

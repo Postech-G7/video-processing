@@ -4,40 +4,42 @@ import { UseCase as DefaultUseCase } from '../../../shared/application/providers
 import ffmpeg from 'fluent-ffmpeg';
 import * as fs from 'fs';
 import * as path from 'path';
-import archiver from 'archiver';
+import AdmZip from 'adm-zip';
 import { BadRequestError } from '../../../shared/application/errors/bad-request-error';
+import { upload } from '../../../shared/infraestructure/storage/config/cloud-storage.config';
 
 export namespace ProcessVideoUseCase {
   export type Input = {
     id: string;
   };
 
-  export type Output = void;
+  export type Output = {
+    zipUrl: string;
+  };
 
   export class UseCase implements DefaultUseCase<Input, Output> {
-    constructor(private videoRepository: VideoRepository.Repository) {}
+    constructor(
+      private videoRepository: VideoRepository.Repository,
+    ) {}
 
-    private createTempDir(id: string): string {
+    private async createTempDir(id: string): Promise<string> {
       const tempDir = path.join(process.cwd(), 'temp', id);
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
+      await fs.promises.mkdir(tempDir, { recursive: true });
       return tempDir;
     }
 
     private async processVideo(videoPath: string, outputDir: string): Promise<string[]> {
       return new Promise((resolve, reject) => {
         const screenshots: string[] = [];
-        
         ffmpeg(videoPath)
           .on('end', () => resolve(screenshots))
           .on('error', (err) => reject(err))
-          .on('progress', (progress) => {
-            const screenshotPath = path.join(outputDir, `screenshot-${progress.frames}.png`);
-            screenshots.push(screenshotPath);
+          // @ts-ignore - ffmpeg-fluent types are incomplete
+          .on('screenshot', (filename: string) => {
+            screenshots.push(path.join(outputDir, filename));
           })
           .screenshots({
-            count: 30,
+            count: 3,
             folder: outputDir,
             filename: 'screenshot-%i.png',
           });
@@ -45,39 +47,29 @@ export namespace ProcessVideoUseCase {
     }
 
     private async createZipFile(screenshots: string[], outputDir: string): Promise<string> {
-      const zipPath = path.join(outputDir, 'screenshots.zip');
-      const output = fs.createWriteStream(zipPath);
-      const archive = archiver('zip', { zlib: { level: 9 } });
-
-      return new Promise((resolve, reject) => {
-        output.on('close', () => resolve(zipPath));
-        archive.on('error', (err) => reject(err));
-
-        archive.pipe(output);
-        screenshots.forEach((screenshot) => {
-          archive.file(screenshot, { name: path.basename(screenshot) });
-        });
-        archive.finalize();
+      const zip = new AdmZip();
+      screenshots.forEach((screenshot) => {
+        zip.addLocalFile(screenshot);
       });
+      const zipPath = path.join(outputDir, 'screenshots.zip');
+      zip.writeZip(zipPath);
+      return zipPath;
     }
 
     private cleanup(tempDir: string): void {
-      if (fs.existsSync(tempDir)) {
-        fs.rmSync(tempDir, { recursive: true, force: true });
-      }
+      fs.rmSync(tempDir, { recursive: true, force: true });
     }
 
     async execute(input: Input): Promise<Output> {
       const { id } = input;
 
-      // Get video from repository
       const video = await this.videoRepository.findById(id);
       if (!video) {
         throw new BadRequestError('Video not found');
       }
 
-      const tempDir = this.createTempDir(id);
-      const videoPath = path.join(tempDir, 'video.mp4');
+      const tempDir = await this.createTempDir(id);
+      const videoPath = path.join(tempDir, path.basename(video.path));
 
       try {
         // Read video file from path
@@ -89,6 +81,10 @@ export namespace ProcessVideoUseCase {
 
         // Create zip file with screenshots
         const zipPath = await this.createZipFile(screenshots, tempDir);
+        
+        // Upload zip file to GCS
+        const destination = `screenshots/${id}/screenshots.zip`;
+        const zipUrl = await upload(zipPath, destination);
 
         // Update video status to processed
         video.updateStatus('completed');
@@ -96,14 +92,13 @@ export namespace ProcessVideoUseCase {
 
         // Cleanup temporary files
         this.cleanup(tempDir);
+
+        return { zipUrl };
       } catch (error) {
         // Cleanup on error
         this.cleanup(tempDir);
-        
-        // Update video status to error
         video.updateStatus('failed');
         await this.videoRepository.update(video);
-        
         throw error;
       }
     }
