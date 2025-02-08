@@ -4,14 +4,18 @@ import { Video } from '@prisma/client';
 
 export class VideoModelMapper {
   static toEntity(model: Video) {
-    const { title, userEmail, status, createdAt } = model;
+    const { title, userEmail, status, createdAt, path } = model;
     try {
-      return new VideoEntity({
-        title,
-        userEmail,
-        status,
-        createdAt,
-      }, model.id);
+      return new VideoEntity(
+        {
+          title,
+          userEmail,
+          status,
+          createdAt,
+          path,
+        },
+        model.id,
+      );
     } catch (error) {
       throw new ValidationError('Entity not loaded');
     }

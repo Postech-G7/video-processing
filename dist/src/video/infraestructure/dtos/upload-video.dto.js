@@ -15,7 +15,7 @@ const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class UploadVideoDto {
     static _OPENAPI_METADATA_FACTORY() {
-        return { file: { required: true, type: () => Object }, jwtToken: { required: true, type: () => String } };
+        return { video: { required: true, type: () => Object }, file: { required: true, type: () => Object }, jwtToken: { required: true, type: () => String } };
     }
 }
 exports.UploadVideoDto = UploadVideoDto;

@@ -10,9 +10,14 @@ import {
   HttpCode,
   Query,
   UseGuards,
+  Headers,
+  Req,
+  HttpException,
+  HttpStatus,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { DeleteProcessedVideoUseCase } from '../application/usecases/delete-processed-video.usecase';
 import { RetrieveProcessedVideoUseCase } from '../application/usecases/retrieve-processed-video.usecase';
 import { UploadProcessedVideoUseCase } from '../application/usecases/upload-processed-video.usecase';
@@ -25,24 +30,23 @@ import { ListVideosUseCase } from '../application/usecases/list-videos.usecase';
 import { ListVideosDto } from './dtos/list-videos.dto';
 import { UpdateVideoDto } from './dtos/update-video.dto';
 import { UploadProcessedVideoDto } from './dtos/upload-processed-video.dto';
-import { UploadVideoDto } from './dtos/upload-video.dto';
 
 import {
   VideoCollectionPresenter,
   VideoPresenter,
 } from './presenters/video.presenter';
 import { VideoOutput } from '../application/dtos/video-output';
-import { AuthService } from '../../auth/infraestructure/auth.service';
 import { AuthGuard } from '../../auth/infraestructure/auth.guard';
+import { AuthService } from '../../auth/infraestructure/auth.service';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiResponse,
   ApiTags,
-  getSchemaPath,
-  ApiConsumes,
-  ApiBody,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+
+import { FastifyRequest } from 'fastify';
 
 @ApiTags('Videos')
 @Controller('videos')
@@ -82,16 +86,39 @@ export class VideosController {
     return new VideoCollectionPresenter(output);
   }
 
-  @ApiBearerAuth()
-  @HttpCode(201)
-  @ApiResponse({
-    status: 401,
-    description: 'Acesso não autorizado',
-  })
-  @UseGuards(AuthGuard)
   @Post('upload')
-  async upload(@Body() uploadVideoDto: UploadVideoDto) {
-    return this.uploadVideoUseCase.execute(uploadVideoDto);
+  @UseGuards(AuthGuard)
+  async upload(
+    @Req() request: FastifyRequest,
+    @Headers() headers: Record<string, string>,
+  ) {
+    try {
+      const data = await request.file();
+      const buffer = await data.toBuffer();
+
+      const file: Express.Multer.File = {
+        buffer,
+        originalname: data.filename,
+        mimetype: data.mimetype,
+        size: buffer.length,
+        fieldname: data.fieldname,
+        encoding: '7bit',
+        destination: '',
+        filename: data.filename,
+        path: '',
+        stream: null,
+      };
+
+      return this.uploadVideoUseCase.execute({
+        video: file,
+        jwtToken: headers.authorization,
+      });
+    } catch (error) {
+      throw new HttpException(
+        'Error processing file upload: ' + error.message,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   @HttpCode(201)
@@ -169,36 +196,4 @@ export class VideosController {
   async process(@Param('id') id: string) {
     return this.processVideoUseCase.execute({ id });
   }
-
-  @Post('upload-and-process')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
-  async uploadAndProcess(@UploadedFile() file: Express.Multer.File) {
-    const uploadResult = await this.uploadVideoUseCase.execute({
-      file,
-      jwtToken: 'dummy-token', // Since we removed auth, we'll use a dummy token
-    });
-
-    return this.processVideoUseCase.execute({ id: uploadResult.id });
-  }
 }
-
-//   @Post('video')
-//   @UseGuards(AuthGuard('jwt'))
-//   @UseInterceptors(FileInterceptor('file'))
-//   async uploadVideo(@UploadedFile() file: Express.Multer.File, @Headers('authorization') authHeader: string) {
-//     const jwtToken = authHeader.split(' ')[1]; // Extract the token from the Bearer scheme
-//     //console.log('Received JWT Token:', jwtToken); // Log the token for debugging
-// return this.videoService.uploadVideo(file, jwtToken);
-// }

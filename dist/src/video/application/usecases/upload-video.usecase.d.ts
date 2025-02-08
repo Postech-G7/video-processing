@@ -4,7 +4,7 @@ import { UseCase as DefaultUseCase } from '../../../shared/application/providers
 import { AuthService } from 'src/auth/infraestructure/auth.service';
 export declare namespace UploadVideoUseCase {
     type Input = {
-        file: Express.Multer.File;
+        video: Express.Multer.File;
         jwtToken: string;
     };
     type Output = VideoOutput;
@@ -12,7 +12,7 @@ export declare namespace UploadVideoUseCase {
         private videoRepository;
         private authService;
         constructor(videoRepository: VideoRepository.Repository, authService: AuthService);
-        execute(input: Input): Promise<Output>;
+        execute(input: Input): Promise<VideoOutput>;
         private toOutput;
     }
 }

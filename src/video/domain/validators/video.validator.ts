@@ -12,10 +12,6 @@ import {
 } from 'class-validator';
 
 export class VideoRules {
-  @IsString()
-  @IsNotEmpty()
-  base64: string;
-
   @MinLength(1)
   @MaxLength(255)
   @IsString()
@@ -27,17 +23,17 @@ export class VideoRules {
   @IsIn(['processing', 'completed', 'failed', 'retrieved'])
   status: string;
 
-  @IsString()
-  @IsNotEmpty()
-  userId: string;
-
   @IsEmail()
   @IsNotEmpty()
   userEmail: string;
 
   @IsOptional()
+  @IsString()
+  path?: string;
+
+  @IsOptional()
   @IsDate()
-  createdAt: Date;
+  createdAt?: Date;
 
   constructor(data: VideoProps) {
     Object.assign(this, data);

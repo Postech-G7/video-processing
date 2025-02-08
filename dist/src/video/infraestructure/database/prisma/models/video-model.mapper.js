@@ -5,13 +5,14 @@ const validation_error_1 = require("../../../../../shared/domain/errors/validati
 const video_entity_1 = require("../../../../domain/entities/video.entity");
 class VideoModelMapper {
     static toEntity(model) {
-        const { title, userEmail, status, createdAt } = model;
+        const { title, userEmail, status, createdAt, path } = model;
         try {
             return new video_entity_1.VideoEntity({
                 title,
                 userEmail,
                 status,
                 createdAt,
+                path,
             }, model.id);
         }
         catch (error) {

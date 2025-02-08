@@ -47,11 +47,13 @@ var UploadVideoUseCase;
             this.authService = authService;
         }
         async execute(input) {
-            const { file, jwtToken } = input;
+            const { video: file, jwtToken } = input;
             if (!file || !file.buffer) {
                 throw new bad_request_error_1.BadRequestError('File is missing or invalid');
             }
-            const decodedToken = await this.authService.verifyJwt(jwtToken);
+            const token = jwtToken.replace('Bearer ', '');
+            const decodedToken = await this.authService.verifyJwt(token);
+            console.log(decodedToken);
             const uploadDir = path.join(process.cwd(), 'uploads');
             await fs.mkdir(uploadDir, { recursive: true });
             const fileName = `${Date.now()}-${file.originalname}`;

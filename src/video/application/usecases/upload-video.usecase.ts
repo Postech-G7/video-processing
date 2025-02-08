@@ -9,7 +9,7 @@ import * as path from 'path';
 
 export namespace UploadVideoUseCase {
   export type Input = {
-    file: Express.Multer.File;
+    video: Express.Multer.File;
     jwtToken: string;
   };
 
@@ -18,21 +18,24 @@ export namespace UploadVideoUseCase {
   export class UseCase implements DefaultUseCase<Input, Output> {
     constructor(
       private videoRepository: VideoRepository.Repository,
-      private authService: AuthService
+      private authService: AuthService,
     ) {}
 
-    async execute(input: Input): Promise<Output> {
-      const { file, jwtToken } = input;
+    async execute(input: Input): Promise<VideoOutput> {
+      const { video: file, jwtToken } = input;
 
       if (!file || !file.buffer) {
         throw new BadRequestError('File is missing or invalid');
       }
       //VALIDAR COMO PEGAR O TOKEN DOS HEADERS
+      const token = jwtToken.replace('Bearer ', '');
       const decodedToken = await this.authService.verifyJwt<{
-        email: string;
         id: string;
-      }>(jwtToken);
-
+        email: string;
+        iat: number;
+        exp: number;
+      }>(token);
+      console.log(decodedToken);
       // Save file to disk
       const uploadDir = path.join(process.cwd(), 'uploads');
       await fs.mkdir(uploadDir, { recursive: true });

@@ -6,12 +6,31 @@ import {
 } from '@nestjs/platform-fastify';
 import { applyGlobalConfig } from './global-config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import fastifyMultipart from '@fastify/multipart';
+
 
 async function bootstrap() {
+  const fastifyAdapter = new FastifyAdapter({
+    logger: true,
+  });
+
+  // Configure multipart for file uploads
+  await fastifyAdapter.register(fastifyMultipart, {
+    limits: {
+      fileSize: 50 * 1024 * 1024, // 50MB
+    },
+    addToBody: false,
+    attachFieldsToBody: false,
+    throwFileSizeLimit: true,
+    sharedSchemaId: '#mySharedSchema',
+  });
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter()
+    fastifyAdapter,
   );
+
+  app.enableCors();
 
   const config = new DocumentBuilder()
     .setTitle('FIAP - Fase 5: Hackaton')
@@ -32,5 +51,6 @@ async function bootstrap() {
   applyGlobalConfig(app); //interceptors
   const port = process.env.PORT || 8080;
   await app.listen(port, '0.0.0.0');
+  console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

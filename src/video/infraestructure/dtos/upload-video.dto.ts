@@ -3,6 +3,7 @@ import { IsNotEmpty, IsString } from 'class-validator';
 import { UploadVideoUseCase } from 'src/video/application/usecases/upload-video.usecase';
 
 export class UploadVideoDto implements UploadVideoUseCase.Input {
+  video: Express.Multer.File;
   @ApiProperty({
     description: 'Express Multer Video File',
   })

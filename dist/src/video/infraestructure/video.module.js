@@ -20,6 +20,7 @@ const process_video_usecase_1 = require("../application/usecases/process-video.u
 const get_video_usecase_1 = require("../application/usecases/get-video.usecase");
 const list_videos_usecase_1 = require("../application/usecases/list-videos.usecase");
 const google_cloud_storage_1 = require("../../shared/infraestructure/storage/implementations/google-cloud-storage");
+const auth_service_1 = require("../../auth/infraestructure/auth.service");
 const update_video_1 = require("../application/usecases/update-video");
 let VideoModule = class VideoModule {
 };
@@ -62,7 +63,7 @@ exports.VideoModule = VideoModule = __decorate([
                 useFactory: (videoRepository, authService) => {
                     return new upload_video_usecase_1.UploadVideoUseCase.UseCase(videoRepository, authService);
                 },
-                inject: ['VideoRepository'],
+                inject: ['VideoRepository', auth_service_1.AuthService],
             },
             {
                 provide: process_video_usecase_1.ProcessVideoUseCase.UseCase,

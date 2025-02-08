@@ -19,11 +19,6 @@ class VideoRules {
 }
 exports.VideoRules = VideoRules;
 __decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], VideoRules.prototype, "base64", void 0);
-__decorate([
     (0, class_validator_1.MinLength)(1),
     (0, class_validator_1.MaxLength)(255),
     (0, class_validator_1.IsString)(),
@@ -37,15 +32,15 @@ __decorate([
     __metadata("design:type", String)
 ], VideoRules.prototype, "status", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], VideoRules.prototype, "userId", void 0);
-__decorate([
     (0, class_validator_1.IsEmail)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], VideoRules.prototype, "userEmail", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], VideoRules.prototype, "path", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDate)(),

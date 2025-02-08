@@ -18,10 +18,10 @@ let AuthService = class AuthService {
         this.jwtService = jwtService;
         this.envConfigService = envConfigService;
     }
-    async generateJwt(userId) {
+    async generateJwt(userId, email) {
         const accessToken = await this.jwtService.signAsync({
-            payload: { id: userId },
-            options: {},
+            id: userId,
+            email: email
         });
         return { accessToken };
     }

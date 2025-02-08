@@ -76,7 +76,7 @@ import { UpdateVideoUseCase } from '../application/usecases/update-video';
       ) => {
         return new UploadVideoUseCase.UseCase(videoRepository, authService);
       },
-      inject: ['VideoRepository'],
+      inject: ['VideoRepository', AuthService],
     },
     {
       provide: ProcessVideoUseCase.UseCase,
