@@ -91,16 +91,17 @@ var ProcessVideoUseCase;
             const tempDir = await this.createTempDir(id);
             const videoPath = path.join(tempDir, path.basename(video.path));
             try {
-                const videoBuffer = await fs.promises.readFile(video.path);
-                fs.writeFileSync(videoPath, videoBuffer);
+                const videoBuffer = await (0, cloud_storage_config_1.download)(video.path);
+                await fs.promises.writeFile(videoPath, videoBuffer);
                 const screenshots = await this.processVideo(videoPath, tempDir);
                 const zipPath = await this.createZipFile(screenshots, tempDir);
                 const destination = `screenshots/${id}/screenshots.zip`;
                 const zipUrl = await (0, cloud_storage_config_1.upload)(zipPath, destination);
+                const url = `https://storage.googleapis.com/processed-videos-fiap/${destination}`;
                 video.updateStatus('completed');
                 await this.videoRepository.update(video);
                 this.cleanup(tempDir);
-                return { zipUrl };
+                return { zipUrl: url };
             }
             catch (error) {
                 this.cleanup(tempDir);

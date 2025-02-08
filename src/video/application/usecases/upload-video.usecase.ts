@@ -4,8 +4,7 @@ import { BadRequestError } from '../../../shared/application/errors/bad-request-
 import { UseCase as DefaultUseCase } from '../../../shared/application/providers/usecases/use-case';
 import { VideoEntity } from '../../domain/entities/video.entity';
 import { AuthService } from 'src/auth/infraestructure/auth.service';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import { cloudStorage } from '../../../shared/infraestructure/storage/config/cloud-storage.config';
 
 export namespace UploadVideoUseCase {
   export type Input = {
@@ -36,17 +35,20 @@ export namespace UploadVideoUseCase {
         exp: number;
       }>(token);
       console.log(decodedToken);
-      // Save file to disk
-      const uploadDir = path.join(process.cwd(), 'uploads');
-      await fs.mkdir(uploadDir, { recursive: true });
-      const fileName = `${Date.now()}-${file.originalname}`;
-      const filePath = path.join(uploadDir, fileName);
-      await fs.writeFile(filePath, file.buffer);
+
+      // Save file to GCP bucket
+      const fileName = `videos/${Date.now()}-${file.originalname}`;
+      const fileBuffer = file.buffer;
+      const bucket = cloudStorage;
+      const blob = bucket.file(fileName);
+      await blob.save(fileBuffer, {
+        contentType: file.mimetype,
+      });
 
       const videoEntity = new VideoEntity({
         title: file.originalname,
         userEmail: decodedToken.email,
-        path: filePath,
+        path: fileName, // Store the GCP path instead of local path
         status: 'processing',
         createdAt: new Date(),
       });

@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import AdmZip from 'adm-zip';
 import { BadRequestError } from '../../../shared/application/errors/bad-request-error';
-import { upload } from '../../../shared/infraestructure/storage/config/cloud-storage.config';
+import { upload, cloudStorage, download } from '../../../shared/infraestructure/storage/config/cloud-storage.config';
 
 export namespace ProcessVideoUseCase {
   export type Input = {
@@ -72,9 +72,9 @@ export namespace ProcessVideoUseCase {
       const videoPath = path.join(tempDir, path.basename(video.path));
 
       try {
-        // Read video file from path
-        const videoBuffer = await fs.promises.readFile(video.path);
-        fs.writeFileSync(videoPath, videoBuffer);
+        // Download video file from GCP bucket
+        const videoBuffer = await download(video.path);
+        await fs.promises.writeFile(videoPath, videoBuffer);
 
         // Process video and generate screenshots
         const screenshots = await this.processVideo(videoPath, tempDir);
@@ -85,6 +85,7 @@ export namespace ProcessVideoUseCase {
         // Upload zip file to GCS
         const destination = `screenshots/${id}/screenshots.zip`;
         const zipUrl = await upload(zipPath, destination);
+        const url = `https://storage.googleapis.com/processed-videos-fiap/${destination}`;
 
         // Update video status to processed
         video.updateStatus('completed');
@@ -93,7 +94,7 @@ export namespace ProcessVideoUseCase {
         // Cleanup temporary files
         this.cleanup(tempDir);
 
-        return { zipUrl };
+        return { zipUrl: url };
       } catch (error) {
         // Cleanup on error
         this.cleanup(tempDir);
