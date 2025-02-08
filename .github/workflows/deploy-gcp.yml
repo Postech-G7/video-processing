@@ -1,13 +1,13 @@
-name: "Deploy GCP"
+name: 'Deploy GCP'
 
 on:
   push:
     branches:
-      - "main"
+      - 'main'
   workflow_dispatch:
 
 concurrency:
-  group: "${{ github.workflow }}-${{ github.head_ref || github.ref }}"
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
 
 jobs:
@@ -58,12 +58,13 @@ jobs:
         run: |
           # Save the service account key to a file
           echo '${{ secrets.GCLOUD_KEY_FILENAME }}' > /tmp/gcloud-key.json
-          
+
           # Deploy with secrets and environment variables
           gcloud run deploy video-processing \
             --image gcr.io/light-ratio-447800-d5/video-processing \
             --platform managed \
             --set-secrets DATABASE_URL=projects/470771286195/secrets/DATABASE_URL:latest \
+            --set-secrets GOOGLE_APPLICATION_CREDENTIALS=projects/470771286195/secrets/GOOGLE_APPLICATION_CREDENTIALS:latest \
             --set-secrets GCLOUD_PROJECT_ID=projects/470771286195/secrets/GCLOUD_PROJECT_ID:latest \
             --set-secrets GCLOUD_STORAGE_BUCKET=projects/470771286195/secrets/GCLOUD_STORAGE_BUCKET:latest \
             --set-secrets JWT_SECRET=projects/470771286195/secrets/JWT_SECRET:latest \
@@ -75,7 +76,7 @@ jobs:
             --memory 512Mi \
             --cpu 1 \
             --min-instances 1
-          
+
           # Set IAM policy binding for public access
           gcloud run services add-iam-policy-binding video-processing \
             --region=us-central1 \
