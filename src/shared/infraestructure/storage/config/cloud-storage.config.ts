@@ -1,23 +1,27 @@
-import * as fs from 'fs/promises';
 import * as path from 'path';
+import { Storage } from '@google-cloud/storage';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
+const storage = new Storage();
 
-// Create uploads directory if it doesn't exist
-fs.mkdir(UPLOAD_DIR, { recursive: true }).catch(console.error);
+const UPLOAD_DIR = process.env.GCLOUD_STORAGE_BUCKET || '';
 
-export const cloudStorage = {
-  async upload(filePath: string, destination: string): Promise<string> {
-    const finalPath = path.join(UPLOAD_DIR, destination);
-    await fs.copyFile(filePath, finalPath);
-    return finalPath;
-  },
-  
-  async download(filePath: string): Promise<Buffer> {
-    return fs.readFile(filePath);
-  },
-  
-  async delete(filePath: string): Promise<void> {
-    await fs.unlink(filePath);
-  }
+// Create uploads directory if it doesn't exist (not applicable for Google Cloud Storage)
+
+export const cloudStorage = storage.bucket(UPLOAD_DIR);
+
+export const upload = async (filePath: string, destination: string): Promise<string> => {
+  const [file] = await storage.bucket(UPLOAD_DIR).upload(filePath, {
+    destination: destination,
+  });
+  return file.name;
+};
+
+export const download = async (filePath: string): Promise<Buffer> => {
+  const file = await storage.bucket(UPLOAD_DIR).file(filePath);
+  const [buffer] = await file.download();
+  return buffer;
+};
+
+export const deleteFile = async (filePath: string): Promise<void> => {
+  await storage.bucket(UPLOAD_DIR).file(filePath).delete();
 };

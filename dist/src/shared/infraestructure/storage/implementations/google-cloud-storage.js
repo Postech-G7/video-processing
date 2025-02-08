@@ -46,8 +46,7 @@ class GoogleCloudStorageService {
         if (!file || !file.buffer) {
             throw new bad_request_error_1.BadRequestError('Video file not provided');
         }
-        const bucket = cloud_storage_config_1.cloudStorage.bucket;
-        const fileUpload = bucket.file(destination + file.originalname);
+        const fileUpload = cloud_storage_config_1.cloudStorage.file(destination + file.originalname);
         await fileUpload.save(file.buffer, {
             metadata: { contentType: file.mimetype },
             resumable: false,
@@ -72,12 +71,10 @@ class GoogleCloudStorageService {
         return fileStream;
     }
     async delete(fileName) {
-        const bucket = cloud_storage_config_1.cloudStorage.bucket;
-        await bucket.file(fileName).delete();
+        await cloud_storage_config_1.cloudStorage.file(fileName).delete();
     }
     async listFiles(prefix) {
-        const bucket = cloud_storage_config_1.cloudStorage.bucket;
-        const [files] = await bucket.getFiles({ prefix });
+        const [files] = await cloud_storage_config_1.cloudStorage.getFiles({ prefix });
         return files.map(file => file.name);
     }
 }

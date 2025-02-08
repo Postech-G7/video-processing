@@ -1,54 +1,25 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cloudStorage = void 0;
-const fs = __importStar(require("fs/promises"));
-const path = __importStar(require("path"));
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
-fs.mkdir(UPLOAD_DIR, { recursive: true }).catch(console.error);
-exports.cloudStorage = {
-    async upload(filePath, destination) {
-        const finalPath = path.join(UPLOAD_DIR, destination);
-        await fs.copyFile(filePath, finalPath);
-        return finalPath;
-    },
-    async download(filePath) {
-        return fs.readFile(filePath);
-    },
-    async delete(filePath) {
-        await fs.unlink(filePath);
-    }
+exports.deleteFile = exports.download = exports.upload = exports.cloudStorage = void 0;
+const storage_1 = require("@google-cloud/storage");
+const storage = new storage_1.Storage();
+const UPLOAD_DIR = process.env.GCLOUD_STORAGE_BUCKET || '';
+exports.cloudStorage = storage.bucket(UPLOAD_DIR);
+const upload = async (filePath, destination) => {
+    const [file] = await storage.bucket(UPLOAD_DIR).upload(filePath, {
+        destination: destination,
+    });
+    return file.name;
 };
+exports.upload = upload;
+const download = async (filePath) => {
+    const file = await storage.bucket(UPLOAD_DIR).file(filePath);
+    const [buffer] = await file.download();
+    return buffer;
+};
+exports.download = download;
+const deleteFile = async (filePath) => {
+    await storage.bucket(UPLOAD_DIR).file(filePath).delete();
+};
+exports.deleteFile = deleteFile;
 //# sourceMappingURL=cloud-storage.config.js.map

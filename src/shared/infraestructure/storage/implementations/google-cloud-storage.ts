@@ -20,8 +20,7 @@ export class GoogleCloudStorageService implements StorageInterface {
       throw new BadRequestError('Video file not provided');
     }
 
-    const bucket = cloudStorage.bucket;
-    const fileUpload = bucket.file(destination + file.originalname);
+    const fileUpload = cloudStorage.file(destination + file.originalname);
 
     await fileUpload.save(file.buffer, {
       metadata: { contentType: file.mimetype },
@@ -58,13 +57,11 @@ export class GoogleCloudStorageService implements StorageInterface {
 
   async delete(fileName: string): Promise<void> {
     //filename ou filepath?
-    const bucket = cloudStorage.bucket;
-    await bucket.file(fileName).delete();
+    await cloudStorage.file(fileName).delete();
   }
 
   async listFiles(prefix?: string): Promise<string[]> {
-    const bucket = cloudStorage.bucket;
-    const [files] = await bucket.getFiles({ prefix });
+    const [files] = await cloudStorage.getFiles({ prefix });
     return files.map(file => file.name);
   }
 }
