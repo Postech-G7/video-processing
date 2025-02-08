@@ -30,6 +30,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   applyGlobalConfig(app); //interceptors
-  await app.listen(3000, '0.0.0.0');
+  const port = process.env.PORT || 8080;
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap();
