@@ -19,9 +19,21 @@ export class GoogleCloudStorageService implements StorageInterface {
         throw new BadRequestError('File not found for upload');
       }
 
+      // Verify file size
+      const stats = fs.statSync(filePath);
+      if (stats.size === 0) {
+        throw new BadRequestError('File is empty');
+      }
+      console.log(`Uploading file ${filePath} with size ${stats.size} bytes`);
+
       const bucket = cloudStorage.bucket;
       const fileName = path.basename(filePath);
       const fileUpload = bucket.file(destination + fileName);
+
+      // Read the file into memory to ensure it's complete
+      const fileContent = fs.readFileSync(filePath);
+      console.log(`Read file content with size ${fileContent.length} bytes`);
+
       await bucket.upload(filePath, {
         destination: fileUpload.name,
         resumable: false,
@@ -29,8 +41,19 @@ export class GoogleCloudStorageService implements StorageInterface {
           contentType: 'application/zip',
         },
       });
+
+      // Verify uploaded file
+      const [exists] = await fileUpload.exists();
+      if (!exists) {
+        throw new Error('File upload failed - file does not exist in bucket');
+      }
+
+      const [metadata] = await fileUpload.getMetadata();
+      console.log(`Uploaded file size: ${metadata.size} bytes`);
+
       return `https://storage.googleapis.com/${this.bucketName}/${fileUpload.name}`;
     } catch (error) {
+      console.error('Upload error:', error);
       throw error;
     }
   }

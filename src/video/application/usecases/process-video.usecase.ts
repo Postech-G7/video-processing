@@ -49,15 +49,19 @@ export namespace ProcessVideoUseCase {
         console.log(`Processing video at path: ${videoPath}`);
         console.log(`Output directory for screenshots: ${outputDir}`);
 
+        let screenshotFiles: string[] = [];
+
         ffmpeg(videoPath)
           .on('filenames', (filenames) => {
             console.log('Screenshots filenames:', filenames);
-            resolve(
-              filenames.map((filename) => path.join(outputDir, filename)),
+            screenshotFiles = filenames.map((filename) =>
+              path.join(outputDir, filename),
             );
           })
           .on('end', function () {
             console.log('FFmpeg processing finished');
+            console.log('Screenshot files:', screenshotFiles);
+            resolve(screenshotFiles);
           })
           .on('error', function (err) {
             console.error('FFmpeg error:', err);
@@ -79,70 +83,75 @@ export namespace ProcessVideoUseCase {
 
       if (fs.existsSync(zipPath)) {
         fs.unlinkSync(zipPath);
-
         console.log(`Deleted existing zip file: ${zipPath}`);
       }
+
+      // Verify that all screenshot files exist
+      console.log('Verifying screenshot files before zipping...');
+      screenshots.forEach((screenshot) => {
+        if (!fs.existsSync(screenshot)) {
+          throw new Error(`Screenshot file not found: ${screenshot}`);
+        }
+        const stats = fs.statSync(screenshot);
+        console.log(`Found screenshot: ${screenshot} (${stats.size} bytes)`);
+      });
 
       const output = fs.createWriteStream(zipPath);
       const archive = archiver('zip', { zlib: { level: 9 } });
 
       return new Promise((resolve, reject) => {
-        output.on('close', () => resolve(zipPath));
-        archive.on('error', (err) => reject(err));
+        output.on('close', () => {
+          try {
+            // Verify the zip file exists and has content
+            const stats = fs.statSync(zipPath);
+            console.log(`Zip file created at: ${zipPath}`);
+            console.log(`Zip file size: ${stats.size} bytes`);
+
+            if (stats.size === 0) {
+              reject(new Error('Created zip file is empty'));
+              return;
+            }
+
+            // Verify zip file contains all screenshots
+            const zip = require('adm-zip');
+            const zipFile = new zip(zipPath);
+            const entries = zipFile.getEntries();
+            console.log(`Zip file contains ${entries.length} entries`);
+
+            if (entries.length !== screenshots.length) {
+              reject(
+                new Error(
+                  `Zip file contains ${entries.length} files but expected ${screenshots.length}`,
+                ),
+              );
+              return;
+            }
+
+            resolve(zipPath);
+          } catch (error) {
+            console.error('Error verifying zip file:', error);
+            reject(error);
+          }
+        });
+
+        archive.on('error', (err) => {
+          console.error('Archive error:', err);
+          reject(err);
+        });
+
+        archive.on('entry', (entry) => {
+          console.log(`Added to zip: ${entry.name}`);
+        });
 
         archive.pipe(output);
+
         screenshots.forEach((screenshot) => {
           archive.file(screenshot, { name: path.basename(screenshot) });
         });
+
         archive.finalize();
       });
     }
-
-    // private cleanup(tempDir: string): void {
-    //   if (fs.existsSync(tempDir)) {
-    //     try {
-    //       const files = fs.readdirSync(tempDir);
-    //       if (files.length > 0) {
-    //         console.log(`Cleaning up directory: ${tempDir}. Contents: ${files.join(', ')}`);
-    //         files.forEach(file => {
-    //           const filePath = path.join(tempDir, file);
-    //           let attempts = 0;
-    //           const maxAttempts = 10; // Increase max attempts
-    //           const delayBetweenAttempts = 200; // Increase delay between attempts
-
-    //           const removeFile = () => {
-    //             try {
-    //               fs.unlinkSync(filePath);
-    //               console.log(`Removed file: ${filePath}`);
-    //             } catch (error) {
-    //               if (error.code === 'EBUSY' && attempts < maxAttempts) {
-    //                 attempts++;
-    //                 console.log(`File is busy, retrying... Attempt ${attempts}`);
-    //                 setTimeout(removeFile, delayBetweenAttempts); // Retry after increased delay
-    //               } else {
-    //                 console.error(`Failed to remove file: ${filePath}`, error);
-    //               }
-    //             }
-    //           };
-
-    //           removeFile();
-    //         });
-    //       }
-
-    //       // Now remove the directory itself
-    //       fs.rmSync(tempDir, { recursive: true, force: true });
-    //       console.log(`Removed directory: ${tempDir}`);
-    //     } catch (error) {
-    //       console.error(`Failed to clean up directory: ${tempDir}`, error);
-    //     }
-    //   }
-    // }
-
-    // private cleanup(tempDir: string): void {
-    //   if (fs.existsSync(tempDir)) {
-    //     fs.rmSync(tempDir, { recursive: true, force: true });
-    //   }
-    // }
 
     async execute(input: Input): Promise<Output> {
       const { id } = input;
@@ -163,7 +172,10 @@ export namespace ProcessVideoUseCase {
 
         const zipPath = await this.createZipFile(screenshots, tempDir);
 
-        const zipUrl = await this.storageService.upload(zipPath, 'processed-');
+        const zipUrl = await this.storageService.upload(
+          zipPath,
+          `processed-${id}/`,
+        );
         video.updateStatus('completed');
         video.updateVideoUrl(zipUrl);
         await this.videoRepository.update(video);
