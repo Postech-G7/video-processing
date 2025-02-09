@@ -21,6 +21,12 @@ class VideoEntity extends entity_1.Entity {
     updateStatus(value) {
         this.props.status = value;
     }
+    updateVideoUrl(value) {
+        this.props.processedVideoUrl = value;
+    }
+    get base64() {
+        return this.props.base64;
+    }
     get title() {
         return this.props.title;
     }
@@ -30,11 +36,14 @@ class VideoEntity extends entity_1.Entity {
     get status() {
         return this.props.status;
     }
+    get userId() {
+        return this.props.userId;
+    }
     get userEmail() {
         return this.props.userEmail;
     }
-    get path() {
-        return this.props.path;
+    get processedVideoUrl() {
+        return this.props.processedVideoUrl || null;
     }
     static _OPENAPI_METADATA_FACTORY() {
         return {};

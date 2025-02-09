@@ -18,10 +18,10 @@ let AuthService = class AuthService {
         this.jwtService = jwtService;
         this.envConfigService = envConfigService;
     }
-    async generateJwt(userId, email) {
+    async generateJwt({ userId, userEmail }) {
         const accessToken = await this.jwtService.signAsync({
-            id: userId,
-            email: email
+            payload: { id: userId, email: userEmail },
+            options: {},
         });
         return { accessToken };
     }
@@ -30,6 +30,9 @@ let AuthService = class AuthService {
             secret: this.envConfigService.getJwtSecret(),
         });
         return payload;
+    }
+    async decode(token) {
+        return await this.jwtService.decode(token);
     }
 };
 exports.AuthService = AuthService;

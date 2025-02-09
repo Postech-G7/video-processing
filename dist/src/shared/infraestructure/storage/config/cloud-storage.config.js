@@ -1,29 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteFile = exports.download = exports.upload = exports.cloudStorage = void 0;
+exports.cloudStorage = void 0;
 const storage_1 = require("@google-cloud/storage");
-const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS || '{}');
-const storage = new storage_1.Storage({
-    projectId: process.env.GCLOUD_PROJECT_ID,
-    credentials: credentials,
-});
-const UPLOAD_DIR = process.env.GCLOUD_STORAGE_BUCKET || '';
-exports.cloudStorage = storage.bucket(UPLOAD_DIR);
-const upload = async (filePath, destination) => {
-    const [file] = await storage.bucket(UPLOAD_DIR).upload(filePath, {
-        destination: destination,
+const BUCKET_NAME = process.env.GCLOUD_STORAGE_BUCKET;
+const storage = process.env.NODE_ENV === "test" || !process.env.NODE_ENV
+    ? new storage_1.Storage({
+        projectId: process.env.GCLOUD_PROJECT_ID,
+        keyFilename: process.env.GCLOUD_KEY_FILENAME,
+    })
+    : new storage_1.Storage({
+        projectId: process.env.GCLOUD_PROJECT_ID,
+        credentials: JSON.parse(process.env.GCP_SERVICE_ACCOUNT_KEY),
     });
-    return file.name;
+exports.cloudStorage = {
+    storage,
+    bucket: storage.bucket(BUCKET_NAME),
 };
-exports.upload = upload;
-const download = async (filePath) => {
-    const file = await storage.bucket(UPLOAD_DIR).file(filePath);
-    const [buffer] = await file.download();
-    return buffer;
-};
-exports.download = download;
-const deleteFile = async (filePath) => {
-    await storage.bucket(UPLOAD_DIR).file(filePath).delete();
-};
-exports.deleteFile = deleteFile;
 //# sourceMappingURL=cloud-storage.config.js.map

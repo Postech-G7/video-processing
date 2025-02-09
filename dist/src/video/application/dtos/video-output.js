@@ -6,10 +6,12 @@ class VideoOutputMapper {
         return {
             id: entity.id,
             title: entity.title,
-            userEmail: entity.userEmail,
-            status: entity.status,
-            path: entity.path,
             createdAt: entity.createdAt,
+            status: entity.status,
+            userId: entity.userId,
+            userEmail: entity.userEmail,
+            base64: entity.base64,
+            processedVideoUrl: entity.processedVideoUrl
         };
     }
 }

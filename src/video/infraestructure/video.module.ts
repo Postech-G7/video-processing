@@ -8,13 +8,13 @@ import { PrismaService } from '../../shared/infraestructure/database/prisma/pris
 
 import { DeleteProcessedVideoUseCase } from '../application/usecases/delete-processed-video.usecase';
 import { RetrieveProcessedVideoUseCase } from '../application/usecases/retrieve-processed-video.usecase';
-import { UploadProcessedVideoUseCase } from '../application/usecases/upload-processed-video.usecase';
+// import { UploadProcessedVideoUseCase } from '../application/usecases/upload-processed-video.usecase';
 import { UploadVideoUseCase } from '../application/usecases/upload-video.usecase';
 import { ProcessVideoUseCase } from '../application/usecases/process-video.usecase';
 import { GetVideoUseCase } from '../application/usecases/get-video.usecase';
 import { ListVideosUseCase } from '../application/usecases/list-videos.usecase';
 import { GoogleCloudStorageService } from '../../shared/infraestructure/storage/implementations/google-cloud-storage';
-import { AuthService } from 'src/auth/infraestructure/auth.service';
+import { AuthService } from '../../auth/infraestructure/auth.service';
 import { UpdateVideoUseCase } from '../application/usecases/update-video';
 
 @Module({
@@ -55,35 +55,35 @@ import { UpdateVideoUseCase } from '../application/usecases/update-video';
       },
       inject: ['VideoRepository'],
     },
-    {
-      provide: UploadProcessedVideoUseCase.UseCase,
-      useFactory: (
-        videoRepository: VideoRepository.Repository,
-        storageService: GoogleCloudStorageService
-      ) => {
-        return new UploadProcessedVideoUseCase.UseCase(
-          storageService,
-          videoRepository
-        );
-      },
-      inject: ['VideoRepository', 'StorageService'],
-    },
+    // {
+    //   provide: UploadProcessedVideoUseCase.UseCase,
+    //   useFactory: (
+    //     videoRepository: VideoRepository.Repository,
+    //     storageService: GoogleCloudStorageService
+    //   ) => {
+    //     return new UploadProcessedVideoUseCase.UseCase(
+    //       storageService,
+    //       videoRepository
+    //     );
+    //   },
+    //   inject: ['VideoRepository', 'StorageService'],
+    // },
     {
       provide: UploadVideoUseCase.UseCase,
       useFactory: (
         videoRepository: VideoRepository.Repository,
-        authService: AuthService
+        authService: AuthService  // Injetando AuthService corretamente
       ) => {
         return new UploadVideoUseCase.UseCase(videoRepository, authService);
       },
-      inject: ['VideoRepository', AuthService],
+      inject: ['VideoRepository', AuthService],  // Corrigido para AuthService diretamente
     },
     {
       provide: ProcessVideoUseCase.UseCase,
-      useFactory: (videoRepository: VideoRepository.Repository) => {
-        return new ProcessVideoUseCase.UseCase(videoRepository);
+      useFactory: (videoRepository: VideoRepository.Repository, storageService: GoogleCloudStorageService) => {
+        return new ProcessVideoUseCase.UseCase(videoRepository, storageService);
       },
-      inject: ['VideoRepository'],
+      inject: ['VideoRepository', 'StorageService'],
     },
     {
       provide: GetVideoUseCase.UseCase,

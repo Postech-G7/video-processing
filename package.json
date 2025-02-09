@@ -47,7 +47,10 @@
     "prisma:migrate:test": "npx dotenv-cli -e .env.test -- npx prisma migrate dev --schema ./src/shared/infraestructure/database/prisma/schema.prisma",
     "prisma:generate:development": "npx dotenv-cli -e .env.development -- npx prisma generate --schema ./src/shared/infraestructure/database/prisma/schema.prisma",
     "prisma:migrate:development": "npx dotenv-cli -e .env.development -- npx prisma migrate dev --schema ./src/shared/infraestructure/database/prisma/schema.prisma",
-    "prisma:migrate:reset:development": "npx dotenv-cli -e .env.development -- npx prisma migrate reset --schema ./src/shared/infraestructure/database/prisma/schema.prisma"
+    "prisma:migrate:reset:development": "npx dotenv-cli -e .env.development -- npx prisma migrate reset --schema ./src/shared/infraestructure/database/prisma/schema.prisma",
+    "docker:prune": "docker builder prune -a",
+    "docker:build:test": "docker build --no-cache -t video-processing-test .",
+    "docker:run:test": "docker run -p 8080:8080 video-processing-test"
   },
   "dependencies": {
     "@fastify/multipart": "^7.7.3",

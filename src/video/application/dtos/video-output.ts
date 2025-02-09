@@ -3,10 +3,12 @@ import { VideoEntity } from '../../domain/entities/video.entity';
 export type VideoOutput = {
   id: string;
   title: string;
-  userEmail: string;
-  status: 'processing' | 'completed' | 'failed' | 'retrieved';
-  path: string;
   createdAt: Date;
+  status: 'processing' | 'completed' | 'failed' | 'retrieved';
+  userId: string;
+  userEmail: string;
+  base64: string;
+  processedVideoUrl?: string;
 };
 
 export class VideoOutputMapper {
@@ -14,10 +16,12 @@ export class VideoOutputMapper {
     return {
       id: entity.id,
       title: entity.title,
-      userEmail: entity.userEmail,
-      status: entity.status,
-      path: entity.path,
       createdAt: entity.createdAt,
+      status: entity.status,
+      userId: entity.userId,
+      userEmail: entity.userEmail,
+      base64: entity.base64,
+      processedVideoUrl: entity.processedVideoUrl 
     };
   }
 }
