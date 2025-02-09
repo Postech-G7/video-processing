@@ -2,8 +2,7 @@ name: 'Deploy GCP'
 
 on:
   push:
-    branches:
-      - 'main'
+    branches: ['main', 'prod']
   workflow_dispatch:
 
 concurrency:
