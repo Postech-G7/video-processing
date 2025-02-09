@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { VideoRepository } from '../../domain/repositories/video.repository';
 import { UseCase as DefaultUseCase } from '../../../shared/application/providers/usecases/use-case';
 import ffmpeg from 'fluent-ffmpeg';
@@ -17,11 +18,14 @@ export namespace ProcessVideoUseCase {
   export type Output = VideoOutput;
 
   export class UseCase implements DefaultUseCase<Input, Output> {
-    constructor(private videoRepository: VideoRepository.Repository, private storageService: GoogleCloudStorageService) {}
+    constructor(
+      private videoRepository: VideoRepository.Repository,
+      private storageService: GoogleCloudStorageService,
+    ) {}
 
     private createTempDir(id: string): string {
       const tempDir = path.join(process.cwd(), 'processed-videos', id);
-            
+
       try {
         if (fs.existsSync(tempDir)) {
           console.log(`Directory already exists: ${tempDir}`);
@@ -31,27 +35,31 @@ export namespace ProcessVideoUseCase {
         }
       } catch (error) {
         console.error(`Failed to create directory: ${tempDir}`, error);
-        throw error; 
+        throw error;
       }
-      
+
       return tempDir;
     }
 
-    private async processVideo(videoPath: string, outputDir: string): Promise<string[]> {
-    
+    private async processVideo(
+      videoPath: string,
+      outputDir: string,
+    ): Promise<string[]> {
       return new Promise((resolve, reject) => {
         console.log(`Processing video at path: ${videoPath}`);
         console.log(`Output directory for screenshots: ${outputDir}`);
-    
+
         ffmpeg(videoPath)
           .on('filenames', (filenames) => {
             console.log('Screenshots filenames:', filenames);
-            resolve(filenames.map((filename) => path.join(outputDir, filename)));
+            resolve(
+              filenames.map((filename) => path.join(outputDir, filename)),
+            );
           })
-          .on('end', function() {
+          .on('end', function () {
             console.log('FFmpeg processing finished');
           })
-          .on('error', function(err) {
+          .on('error', function (err) {
             console.error('FFmpeg error:', err);
             reject(err);
           })
@@ -62,24 +70,26 @@ export namespace ProcessVideoUseCase {
           });
       });
     }
-    
-    
-    private async createZipFile(screenshots: string[], outputDir: string): Promise<string> {
+
+    private async createZipFile(
+      screenshots: string[],
+      outputDir: string,
+    ): Promise<string> {
       const zipPath = path.join(outputDir, 'screenshots.zip');
-      
+
       if (fs.existsSync(zipPath)) {
-        fs.unlinkSync(zipPath); 
-        
+        fs.unlinkSync(zipPath);
+
         console.log(`Deleted existing zip file: ${zipPath}`);
       }
-    
+
       const output = fs.createWriteStream(zipPath);
       const archive = archiver('zip', { zlib: { level: 9 } });
-    
+
       return new Promise((resolve, reject) => {
         output.on('close', () => resolve(zipPath));
         archive.on('error', (err) => reject(err));
-    
+
         archive.pipe(output);
         screenshots.forEach((screenshot) => {
           archive.file(screenshot, { name: path.basename(screenshot) });
@@ -99,7 +109,7 @@ export namespace ProcessVideoUseCase {
     //           let attempts = 0;
     //           const maxAttempts = 10; // Increase max attempts
     //           const delayBetweenAttempts = 200; // Increase delay between attempts
-    
+
     //           const removeFile = () => {
     //             try {
     //               fs.unlinkSync(filePath);
@@ -114,11 +124,11 @@ export namespace ProcessVideoUseCase {
     //               }
     //             }
     //           };
-    
+
     //           removeFile();
     //         });
     //       }
-    
+
     //       // Now remove the directory itself
     //       fs.rmSync(tempDir, { recursive: true, force: true });
     //       console.log(`Removed directory: ${tempDir}`);
@@ -136,7 +146,6 @@ export namespace ProcessVideoUseCase {
 
     async execute(input: Input): Promise<Output> {
       const { id } = input;
-
 
       const video = await this.videoRepository.findById(id);
       if (!video) {
@@ -172,4 +181,3 @@ export namespace ProcessVideoUseCase {
     }
   }
 }
-

@@ -11,7 +11,7 @@ import {
   Query,
   // UseGuards,
   Headers,
-  Req
+  Req,
 } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
 import { DeleteProcessedVideoUseCase } from '../application/usecases/delete-processed-video.usecase';
@@ -35,7 +35,7 @@ import {
 } from './presenters/video.presenter';
 import { VideoOutput } from '../application/dtos/video-output';
 // import { AuthService } from '../../auth/infraestructure/auth.service';
-import { AuthGuard } from '../../auth/infraestructure/auth.guard';
+// import { AuthGuard } from '../../auth/infraestructure/auth.guard';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -43,7 +43,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-
 
 @ApiTags('Videos')
 @Controller('videos')
@@ -90,8 +89,11 @@ export class VideosController {
   @ApiResponse({ status: 401, description: 'Acesso não autorizado' })
   // @UseGuards(AuthGuard)
   @Post('upload')
-  async upload(@Req() request: FastifyRequest, @Headers('authorization') authHeader: string) {
-    const data = (request.body as UploadVideoDto).file; 
+  async upload(
+    @Req() request: FastifyRequest,
+    @Headers('authorization') authHeader: string,
+  ) {
+    const data = (request.body as UploadVideoDto).file;
     if (!data) {
       throw new Error('Nenhum arquivo enviado!');
     }
@@ -99,7 +101,7 @@ export class VideosController {
     const fileBuffer = await data.toBuffer();
 
     const jwtToken = authHeader.split(' ')[1];
-    
+
     return this.uploadVideoUseCase.execute({
       file: { filename: data.filename, file: fileBuffer },
       jwtToken,
@@ -179,7 +181,7 @@ export class VideosController {
   @Patch(':id/status')
   async updateStatus(
     @Param('id') id: string,
-    @Body() updateVideoDto: UpdateVideoDto
+    @Body() updateVideoDto: UpdateVideoDto,
   ) {
     return this.updateVideoUseCase.execute({ id, ...updateVideoDto });
   }

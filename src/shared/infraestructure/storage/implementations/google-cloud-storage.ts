@@ -14,27 +14,26 @@ export class GoogleCloudStorageService implements StorageInterface {
   }
 
   async upload(filePath: string, destination: string): Promise<string> {
-    try{
-    if (!fs.existsSync(filePath)) {
-      throw new BadRequestError('File not found for upload');
-    }
+    try {
+      if (!fs.existsSync(filePath)) {
+        throw new BadRequestError('File not found for upload');
+      }
 
-    const bucket = cloudStorage.bucket;
-    const fileName = path.basename(filePath);
-    const fileUpload = bucket.file(destination + fileName);
-    await bucket.upload(filePath, {
-      destination: fileUpload.name,
-      resumable: false,
-      metadata: {
-        contentType: 'application/zip',
-      },
-    });
-    return `https://storage.googleapis.com/${this.bucketName}/${fileUpload.name}`;
+      const bucket = cloudStorage.bucket;
+      const fileName = path.basename(filePath);
+      const fileUpload = bucket.file(destination + fileName);
+      await bucket.upload(filePath, {
+        destination: fileUpload.name,
+        resumable: false,
+        metadata: {
+          contentType: 'application/zip',
+        },
+      });
+      return `https://storage.googleapis.com/${this.bucketName}/${fileUpload.name}`;
+    } catch (error) {
+      throw error;
+    }
   }
-  catch(error){
-    throw error;
-  }
-}
 
   async download(fileId: string): Promise<Readable> {
     const bucketName = this.bucketName;
@@ -53,7 +52,7 @@ export class GoogleCloudStorageService implements StorageInterface {
 
     const fileStream = fs.createReadStream(filePath);
 
-    fileStream.on('error', err => {
+    fileStream.on('error', (err) => {
       console.error('File stream error:', err);
       throw new NotFoundError('File not found');
     });
@@ -68,8 +67,8 @@ export class GoogleCloudStorageService implements StorageInterface {
   }
 
   async listFiles(prefix?: string): Promise<string[]> {
-    const bucket = cloudStorage.bucket
+    const bucket = cloudStorage.bucket;
     const [files] = await bucket.getFiles({ prefix });
-    return files.map(file => file.name);
+    return files.map((file) => file.name);
   }
 }
