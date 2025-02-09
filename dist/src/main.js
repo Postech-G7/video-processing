@@ -18,7 +18,7 @@ async function bootstrap() {
             fileSize: 50 * 1024 * 1024,
         },
         addToBody: false,
-        attachFieldsToBody: false,
+        attachFieldsToBody: true,
         throwFileSizeLimit: true,
         sharedSchemaId: '#mySharedSchema',
     });
@@ -39,7 +39,7 @@ async function bootstrap() {
     const document = swagger_1.SwaggerModule.createDocument(app, config);
     swagger_1.SwaggerModule.setup('api', app, document);
     (0, global_config_1.applyGlobalConfig)(app);
-    const port = process.env.PORT || 8080;
+    const port = process.env.PORT || 3000;
     await app.listen(port, '0.0.0.0');
     console.log(`Application is running on: ${await app.getUrl()}`);
 }

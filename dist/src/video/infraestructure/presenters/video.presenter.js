@@ -11,14 +11,16 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VideoCollectionPresenter = exports.VideoPresenter = void 0;
 const class_transformer_1 = require("class-transformer");
+const collection_presenter_1 = require("../../../shared/infraestructure/presenters/collection.presenter");
 const swagger_1 = require("@nestjs/swagger");
 class VideoPresenter {
     constructor(output) {
         this.id = output.id;
         this.title = output.title;
-        this.userEmail = output.userEmail;
         this.status = output.status;
-        this.path = output.path;
+        this.base64 = output.base64;
+        this.userId = output.userId;
+        this.userEmail = output.userEmail;
         this.createdAt = output.createdAt;
     }
 }
@@ -37,22 +39,28 @@ __decorate([
 ], VideoPresenter.prototype, "title", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'E-mail do usuário',
-    }),
-    __metadata("design:type", String)
-], VideoPresenter.prototype, "userEmail", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
         description: 'Status do processamento do vídeo',
     }),
     __metadata("design:type", String)
 ], VideoPresenter.prototype, "status", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Caminho do vídeo',
+        description: 'Base64 do vídeo',
     }),
     __metadata("design:type", String)
-], VideoPresenter.prototype, "path", void 0);
+], VideoPresenter.prototype, "base64", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID do usuário',
+    }),
+    __metadata("design:type", String)
+], VideoPresenter.prototype, "userId", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'E-mail do usuário',
+    }),
+    __metadata("design:type", String)
+], VideoPresenter.prototype, "userEmail", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Data de criação do vídeo',
@@ -60,15 +68,11 @@ __decorate([
     (0, class_transformer_1.Transform)(({ value }) => value.toISOString()),
     __metadata("design:type", Date)
 ], VideoPresenter.prototype, "createdAt", void 0);
-class VideoCollectionPresenter {
+class VideoCollectionPresenter extends collection_presenter_1.CollectionPresenter {
     constructor(output) {
-        this.data = output.items.map(item => new VideoPresenter(item));
-        this.meta = {
-            total: output.total,
-            currentPage: output.currentPage,
-            perPage: output.perPage,
-            lastPage: Math.ceil(output.total / output.perPage),
-        };
+        const { items, ...paginationProps } = output;
+        super(paginationProps);
+        this.data = items.map(item => new VideoPresenter(item));
     }
 }
 exports.VideoCollectionPresenter = VideoCollectionPresenter;

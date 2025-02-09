@@ -5,7 +5,7 @@ import { VideoRepository } from '../../../../domain/repositories/video.repositor
 import { VideoModelMapper } from '../models/video-model.mapper';
 
 export class VideoPrismaRepository implements VideoRepository.Repository {
-  sortableFields: string[] = ['userEmail', 'createdAt'];
+  sortableFields: string[] = ['userId', 'createdAt'];
 
   constructor(private prismaService: PrismaService) {}
 
@@ -19,7 +19,7 @@ export class VideoPrismaRepository implements VideoRepository.Repository {
     const count = await this.prismaService.video.count({
       ...(props.filter && {
         where: {
-          userEmail: {
+          userId: {
             equals: filter,
           },
         },
@@ -28,7 +28,7 @@ export class VideoPrismaRepository implements VideoRepository.Repository {
     const models = await this.prismaService.video.findMany({
       ...(props.filter && {
         where: {
-          userEmail: {
+          userId: {
             equals: filter,
           },
         },
@@ -65,6 +65,7 @@ export class VideoPrismaRepository implements VideoRepository.Repository {
         id: entity._id,
       },
     });
+    const videoUpdated = await this._get(entity._id);
   }
 
   async findById(id: string): Promise<VideoEntity> {

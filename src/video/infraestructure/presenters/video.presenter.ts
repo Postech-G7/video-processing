@@ -1,5 +1,7 @@
 import { VideoOutput } from '../../application/dtos/video-output';
 import { Transform } from 'class-transformer';
+import { CollectionPresenter } from '../../../shared/infraestructure/presenters/collection.presenter';
+import { ListVideosUseCase } from '../../application/usecases/list-videos.usecase';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class VideoPresenter {
@@ -14,19 +16,24 @@ export class VideoPresenter {
   title: string;
 
   @ApiProperty({
-    description: 'E-mail do usuário',
-  })
-  userEmail: string;
-
-  @ApiProperty({
     description: 'Status do processamento do vídeo',
   })
   status: string;
 
   @ApiProperty({
-    description: 'Caminho do vídeo',
+    description: 'Base64 do vídeo',
   })
-  path: string;
+  base64: string;
+
+  @ApiProperty({
+    description: 'ID do usuário',
+  })
+  userId: string;
+
+  @ApiProperty({
+    description: 'E-mail do usuário',
+  })
+  userEmail: string;
 
   @ApiProperty({
     description: 'Data de criação do vídeo',
@@ -37,29 +44,19 @@ export class VideoPresenter {
   constructor(output: VideoOutput) {
     this.id = output.id;
     this.title = output.title;
-    this.userEmail = output.userEmail;
     this.status = output.status;
-    this.path = output.path;
+    this.base64 = output.base64;
+    this.userId = output.userId;
+    this.userEmail = output.userEmail;
     this.createdAt = output.createdAt;
   }
 }
 
-export class VideoCollectionPresenter {
+export class VideoCollectionPresenter extends CollectionPresenter {
   data: VideoPresenter[];
-  meta: {
-    total: number;
-    currentPage: number;
-    perPage: number;
-    lastPage: number;
-  };
-
-  constructor(output: any) {
-    this.data = output.items.map(item => new VideoPresenter(item));
-    this.meta = {
-      total: output.total,
-      currentPage: output.currentPage,
-      perPage: output.perPage,
-      lastPage: Math.ceil(output.total / output.perPage),
-    };
+  constructor(output: ListVideosUseCase.Output) {
+    const { items, ...paginationProps } = output;
+    super(paginationProps);
+    this.data = items.map(item => new VideoPresenter(item));
   }
 }

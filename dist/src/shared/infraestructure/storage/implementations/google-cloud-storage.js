@@ -38,20 +38,31 @@ const fs = __importStar(require("fs"));
 const cloud_storage_config_1 = require("../config/cloud-storage.config");
 const not_found_error_1 = require("../../../domain/errors/not-found-error");
 const bad_request_error_1 = require("../../../application/errors/bad-request-error");
+const path = __importStar(require("path"));
 class GoogleCloudStorageService {
     constructor() {
         this.bucketName = process.env.GCLOUD_STORAGE_BUCKET;
     }
-    async upload(file, destination) {
-        if (!file || !file.buffer) {
-            throw new bad_request_error_1.BadRequestError('Video file not provided');
+    async upload(filePath, destination) {
+        try {
+            if (!fs.existsSync(filePath)) {
+                throw new bad_request_error_1.BadRequestError('File not found for upload');
+            }
+            const bucket = cloud_storage_config_1.cloudStorage.bucket;
+            const fileName = path.basename(filePath);
+            const fileUpload = bucket.file(destination + fileName);
+            await bucket.upload(filePath, {
+                destination: fileUpload.name,
+                resumable: false,
+                metadata: {
+                    contentType: 'application/zip',
+                },
+            });
+            return `https://storage.googleapis.com/${this.bucketName}/${fileUpload.name}`;
         }
-        const fileUpload = cloud_storage_config_1.cloudStorage.file(destination + file.originalname);
-        await fileUpload.save(file.buffer, {
-            metadata: { contentType: file.mimetype },
-            resumable: false,
-        });
-        return fileUpload.publicUrl();
+        catch (error) {
+            throw error;
+        }
     }
     async download(fileId) {
         const bucketName = this.bucketName;
@@ -71,10 +82,12 @@ class GoogleCloudStorageService {
         return fileStream;
     }
     async delete(fileName) {
-        await cloud_storage_config_1.cloudStorage.file(fileName).delete();
+        const bucket = cloud_storage_config_1.cloudStorage.bucket;
+        await bucket.file(fileName).delete();
     }
     async listFiles(prefix) {
-        const [files] = await cloud_storage_config_1.cloudStorage.getFiles({ prefix });
+        const bucket = cloud_storage_config_1.cloudStorage.bucket;
+        const [files] = await bucket.getFiles({ prefix });
         return files.map(file => file.name);
     }
 }

@@ -57,7 +57,7 @@ jobs:
       - name: 'Deploy to Cloud Run'
         run: |
           # Save the service account key to a file
-          echo '${{ secrets.GCLOUD_KEY_FILENAME }}' > /tmp/gcloud-key.json
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > /tmp/gcloud-key.json
 
           # Deploy with secrets and environment variables
           gcloud run deploy video-processing \

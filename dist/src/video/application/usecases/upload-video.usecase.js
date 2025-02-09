@@ -4,7 +4,6 @@ exports.UploadVideoUseCase = void 0;
 const video_output_1 = require("../dtos/video-output");
 const bad_request_error_1 = require("../../../shared/application/errors/bad-request-error");
 const video_entity_1 = require("../../domain/entities/video.entity");
-const cloud_storage_config_1 = require("../../../shared/infraestructure/storage/config/cloud-storage.config");
 var UploadVideoUseCase;
 (function (UploadVideoUseCase) {
     class UseCase {
@@ -13,24 +12,16 @@ var UploadVideoUseCase;
             this.authService = authService;
         }
         async execute(input) {
-            const { video: file, jwtToken } = input;
-            if (!file || !file.buffer) {
+            const { file, jwtToken } = input;
+            if (!file) {
                 throw new bad_request_error_1.BadRequestError('File is missing or invalid');
             }
-            const token = jwtToken.replace('Bearer ', '');
-            const decodedToken = await this.authService.verifyJwt(token);
-            console.log(decodedToken);
-            const fileName = `videos/${Date.now()}-${file.originalname}`;
-            const fileBuffer = file.buffer;
-            const bucket = cloud_storage_config_1.cloudStorage;
-            const blob = bucket.file(fileName);
-            await blob.save(fileBuffer, {
-                contentType: file.mimetype,
-            });
+            const decodedToken = await this.authService.decode(jwtToken);
             const videoEntity = new video_entity_1.VideoEntity({
-                title: file.originalname,
-                userEmail: decodedToken.email,
-                path: fileName,
+                title: file.filename,
+                userEmail: decodedToken.payload.email,
+                base64: file.file.toString('base64'),
+                userId: decodedToken.payload.id,
                 status: 'processing',
                 createdAt: new Date(),
             });

@@ -15,12 +15,16 @@ enum VideoStatus {
 }
 
 model Video {
-  id        String      @id @db.Uuid
-  title     String      @db.VarChar(255)
-  userEmail String      @db.VarChar(255)
-  status    VideoStatus @default(processing)
-  path      String?     @db.VarChar(255)
-  createdAt DateTime    @default(now())
+  id                String      @id @db.Uuid
+  title             String      @db.VarChar(255)
+  userEmail         String      @db.VarChar(255)
+  base64            String      @db.Text
+  userId            String      @db.Uuid
+  status            VideoStatus @default(processing)
+  createdAt         DateTime    @default(now())
+  processedVideoUrl String?     @db.Text
 
+  @@index([userId])
+  @@index([userEmail])
   @@map("videos")
 }

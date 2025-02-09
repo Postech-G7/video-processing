@@ -9,18 +9,14 @@ import {
   Inject,
   HttpCode,
   Query,
-  UseGuards,
+  // UseGuards,
   Headers,
-  Req,
-  HttpException,
-  HttpStatus,
-  UseInterceptors,
-  UploadedFile,
+  Req
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FastifyRequest } from 'fastify';
 import { DeleteProcessedVideoUseCase } from '../application/usecases/delete-processed-video.usecase';
 import { RetrieveProcessedVideoUseCase } from '../application/usecases/retrieve-processed-video.usecase';
-import { UploadProcessedVideoUseCase } from '../application/usecases/upload-processed-video.usecase';
+// import { UploadProcessedVideoUseCase } from '../application/usecases/upload-processed-video.usecase';
 import { UploadVideoUseCase } from '../application/usecases/upload-video.usecase';
 import { ProcessVideoUseCase } from '../application/usecases/process-video.usecase';
 import { GetVideoUseCase } from '../application/usecases/get-video.usecase';
@@ -28,16 +24,18 @@ import { UpdateVideoUseCase } from '../application/usecases/update-video';
 import { ListVideosUseCase } from '../application/usecases/list-videos.usecase';
 
 import { ListVideosDto } from './dtos/list-videos.dto';
+//   import { RetrieveProcessedVideoDto } from './dtos/retrieve-processed-video.dto';
 import { UpdateVideoDto } from './dtos/update-video.dto';
-import { UploadProcessedVideoDto } from './dtos/upload-processed-video.dto';
+// import { UploadProcessedVideoDto } from './dtos/upload-processed-video.dto';
+import { UploadVideoDto } from './dtos/upload-video.dto';
 
 import {
   VideoCollectionPresenter,
   VideoPresenter,
 } from './presenters/video.presenter';
 import { VideoOutput } from '../application/dtos/video-output';
+// import { AuthService } from '../../auth/infraestructure/auth.service';
 import { AuthGuard } from '../../auth/infraestructure/auth.guard';
-import { AuthService } from '../../auth/infraestructure/auth.service';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -46,7 +44,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { FastifyRequest } from 'fastify';
 
 @ApiTags('Videos')
 @Controller('videos')
@@ -57,8 +54,8 @@ export class VideosController {
   @Inject(RetrieveProcessedVideoUseCase.UseCase)
   private retrieveProcessedVideoUseCase: RetrieveProcessedVideoUseCase.UseCase;
 
-  @Inject(UploadProcessedVideoUseCase.UseCase)
-  private uploadProcessedVideoUseCase: UploadProcessedVideoUseCase.UseCase;
+  // @Inject(UploadProcessedVideoUseCase.UseCase)
+  // private uploadProcessedVideoUseCase: UploadProcessedVideoUseCase.UseCase;
 
   @Inject(UploadVideoUseCase.UseCase)
   private uploadVideoUseCase: UploadVideoUseCase.UseCase;
@@ -75,8 +72,8 @@ export class VideosController {
   @Inject(ListVideosUseCase.UseCase)
   private listVideosUseCase: ListVideosUseCase.UseCase;
 
-  @Inject(AuthService)
-  private authService: AuthService;
+  // @Inject(AuthService)
+  // private authService: AuthService;
 
   static videoToResponse(output: VideoOutput) {
     return new VideoPresenter(output);
@@ -86,47 +83,43 @@ export class VideosController {
     return new VideoCollectionPresenter(output);
   }
 
+  @ApiBearerAuth()
+  @HttpCode(201)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: UploadVideoDto })
+  @ApiResponse({ status: 401, description: 'Acesso não autorizado' })
+  // @UseGuards(AuthGuard)
   @Post('upload')
-  @UseGuards(AuthGuard)
-  async upload(
-    @Req() request: FastifyRequest,
-    @Headers() headers: Record<string, string>,
-  ) {
-    try {
-      const data = await request.file();
-      const buffer = await data.toBuffer();
-
-      const file: Express.Multer.File = {
-        buffer,
-        originalname: data.filename,
-        mimetype: data.mimetype,
-        size: buffer.length,
-        fieldname: data.fieldname,
-        encoding: '7bit',
-        destination: '',
-        filename: data.filename,
-        path: '',
-        stream: null,
-      };
-
-      return this.uploadVideoUseCase.execute({
-        video: file,
-        jwtToken: headers.authorization,
-      });
-    } catch (error) {
-      throw new HttpException(
-        'Error processing file upload: ' + error.message,
-        HttpStatus.BAD_REQUEST,
-      );
+  async upload(@Req() request: FastifyRequest, @Headers('authorization') authHeader: string) {
+    const data = (request.body as UploadVideoDto).file; 
+    if (!data) {
+      throw new Error('Nenhum arquivo enviado!');
     }
+
+    const fileBuffer = await data.toBuffer();
+
+    const jwtToken = authHeader.split(' ')[1];
+    
+    return this.uploadVideoUseCase.execute({
+      file: { filename: data.filename, file: fileBuffer },
+      jwtToken,
+    });
   }
 
-  @HttpCode(201)
-  @Post('upload-processed')
-  async uploadProcessed(
-    @Body() uploadProcessedVideoDto: UploadProcessedVideoDto,
-  ) {
-    return this.uploadProcessedVideoUseCase.execute(uploadProcessedVideoDto);
+  // @HttpCode(201)
+  // @Post('upload-processed')
+  // async uploadProcessed(
+  //   @Body() uploadProcessedVideoDto: UploadProcessedVideoDto
+  // ) {
+  //   return this.uploadProcessedVideoUseCase.execute(uploadProcessedVideoDto);
+  // }
+
+  @ApiResponse({ status: 500, description: 'Erro ao processar video' })
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @Post('process/:id')
+  async process(@Param('id') id: string) {
+    return this.processVideoUseCase.execute({ id });
   }
 
   @ApiBearerAuth()
@@ -138,7 +131,7 @@ export class VideosController {
     status: 401,
     description: 'Acesso não autorizado',
   })
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get(':id')
   async getVideo(@Param('id') id: string) {
     const output = await this.getVideoUseCase.execute({ id });
@@ -154,7 +147,7 @@ export class VideosController {
     status: 401,
     description: 'Acesso não autorizado',
   })
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get('processed/:id')
   async getProcessedVideo(@Param('id') id: string) {
     await this.retrieveProcessedVideoUseCase.execute({ id });
@@ -169,7 +162,7 @@ export class VideosController {
     status: 401,
     description: 'Acesso não autorizado',
   })
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Delete(':id')
   async deleteProcessed(@Param('id') id: string) {
     await this.deleteProcessedVideoUseCase.execute({ id });
@@ -186,14 +179,8 @@ export class VideosController {
   @Patch(':id/status')
   async updateStatus(
     @Param('id') id: string,
-    @Body() updateVideoDto: UpdateVideoDto,
+    @Body() updateVideoDto: UpdateVideoDto
   ) {
     return this.updateVideoUseCase.execute({ id, ...updateVideoDto });
-  }
-
-  @ApiBearerAuth()
-  @Post('process/:id')
-  async process(@Param('id') id: string) {
-    return this.processVideoUseCase.execute({ id });
   }
 }

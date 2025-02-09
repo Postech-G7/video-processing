@@ -7,7 +7,7 @@ const video_model_mapper_1 = require("../models/video-model.mapper");
 class VideoPrismaRepository {
     constructor(prismaService) {
         this.prismaService = prismaService;
-        this.sortableFields = ['userEmail', 'createdAt'];
+        this.sortableFields = ['userId', 'createdAt'];
     }
     async search(props) {
         const sortable = this.sortableFields?.includes(props.sort);
@@ -17,7 +17,7 @@ class VideoPrismaRepository {
         const count = await this.prismaService.video.count({
             ...(props.filter && {
                 where: {
-                    userEmail: {
+                    userId: {
                         equals: filter,
                     },
                 },
@@ -26,7 +26,7 @@ class VideoPrismaRepository {
         const models = await this.prismaService.video.findMany({
             ...(props.filter && {
                 where: {
-                    userEmail: {
+                    userId: {
                         equals: filter,
                     },
                 },
@@ -60,6 +60,7 @@ class VideoPrismaRepository {
                 id: entity._id,
             },
         });
+        const videoUpdated = await this._get(entity._id);
     }
     async findById(id) {
         return await this._get(id);

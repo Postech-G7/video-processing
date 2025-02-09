@@ -40,74 +40,98 @@ exports.ProcessVideoUseCase = void 0;
 const fluent_ffmpeg_1 = __importDefault(require("fluent-ffmpeg"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const adm_zip_1 = __importDefault(require("adm-zip"));
-const bad_request_error_1 = require("../../../shared/application/errors/bad-request-error");
-const cloud_storage_config_1 = require("../../../shared/infraestructure/storage/config/cloud-storage.config");
+const archiver_1 = __importDefault(require("archiver"));
+const video_output_1 = require("../dtos/video-output");
+const not_found_error_1 = require("../../../shared/domain/errors/not-found-error");
+const server_error_1 = require("../../../shared/domain/errors/server-error");
 var ProcessVideoUseCase;
 (function (ProcessVideoUseCase) {
     class UseCase {
-        constructor(videoRepository) {
+        constructor(videoRepository, storageService) {
             this.videoRepository = videoRepository;
+            this.storageService = storageService;
         }
-        async createTempDir(id) {
-            const tempDir = path.join(process.cwd(), 'temp', id);
-            await fs.promises.mkdir(tempDir, { recursive: true });
+        createTempDir(id) {
+            const tempDir = path.join(process.cwd(), 'processed-videos', id);
+            try {
+                if (fs.existsSync(tempDir)) {
+                    console.log(`Directory already exists: ${tempDir}`);
+                }
+                else {
+                    fs.mkdirSync(tempDir, { recursive: true });
+                    console.log(`Created directory: ${tempDir}`);
+                }
+            }
+            catch (error) {
+                console.error(`Failed to create directory: ${tempDir}`, error);
+                throw error;
+            }
             return tempDir;
         }
         async processVideo(videoPath, outputDir) {
             return new Promise((resolve, reject) => {
-                const screenshots = [];
+                console.log(`Processing video at path: ${videoPath}`);
+                console.log(`Output directory for screenshots: ${outputDir}`);
                 (0, fluent_ffmpeg_1.default)(videoPath)
-                    .on('end', () => resolve(screenshots))
-                    .on('error', (err) => reject(err))
-                    .on('screenshot', (filename) => {
-                    screenshots.push(path.join(outputDir, filename));
+                    .on('filenames', (filenames) => {
+                    console.log('Screenshots filenames:', filenames);
+                    resolve(filenames.map((filename) => path.join(outputDir, filename)));
+                })
+                    .on('end', function () {
+                    console.log('FFmpeg processing finished');
+                })
+                    .on('error', function (err) {
+                    console.error('FFmpeg error:', err);
+                    reject(err);
                 })
                     .screenshots({
-                    count: 3,
+                    count: 30,
                     folder: outputDir,
                     filename: 'screenshot-%i.png',
                 });
             });
         }
         async createZipFile(screenshots, outputDir) {
-            const zip = new adm_zip_1.default();
-            screenshots.forEach((screenshot) => {
-                zip.addLocalFile(screenshot);
-            });
             const zipPath = path.join(outputDir, 'screenshots.zip');
-            zip.writeZip(zipPath);
-            return zipPath;
-        }
-        cleanup(tempDir) {
-            fs.rmSync(tempDir, { recursive: true, force: true });
+            if (fs.existsSync(zipPath)) {
+                fs.unlinkSync(zipPath);
+                console.log(`Deleted existing zip file: ${zipPath}`);
+            }
+            const output = fs.createWriteStream(zipPath);
+            const archive = (0, archiver_1.default)('zip', { zlib: { level: 9 } });
+            return new Promise((resolve, reject) => {
+                output.on('close', () => resolve(zipPath));
+                archive.on('error', (err) => reject(err));
+                archive.pipe(output);
+                screenshots.forEach((screenshot) => {
+                    archive.file(screenshot, { name: path.basename(screenshot) });
+                });
+                archive.finalize();
+            });
         }
         async execute(input) {
             const { id } = input;
             const video = await this.videoRepository.findById(id);
             if (!video) {
-                throw new bad_request_error_1.BadRequestError('Video not found');
+                throw new not_found_error_1.NotFoundError('Video not found');
             }
-            const tempDir = await this.createTempDir(id);
-            const videoPath = path.join(tempDir, path.basename(video.path));
+            const tempDir = this.createTempDir(id);
+            const videoPath = path.join(tempDir, 'video.mp4');
             try {
-                const videoBuffer = await (0, cloud_storage_config_1.download)(video.path);
-                await fs.promises.writeFile(videoPath, videoBuffer);
+                const videoBuffer = Buffer.from(video.base64, 'base64');
+                fs.writeFileSync(videoPath, videoBuffer);
                 const screenshots = await this.processVideo(videoPath, tempDir);
                 const zipPath = await this.createZipFile(screenshots, tempDir);
-                const destination = `screenshots/${id}/screenshots.zip`;
-                const zipUrl = await (0, cloud_storage_config_1.upload)(zipPath, destination);
-                const url = `https://storage.googleapis.com/processed-videos-fiap/${destination}`;
+                const zipUrl = await this.storageService.upload(zipPath, 'processed-');
                 video.updateStatus('completed');
+                video.updateVideoUrl(zipUrl);
                 await this.videoRepository.update(video);
-                this.cleanup(tempDir);
-                return { zipUrl: url };
+                return video_output_1.VideoOutputMapper.toOutput(video);
             }
             catch (error) {
-                this.cleanup(tempDir);
                 video.updateStatus('failed');
                 await this.videoRepository.update(video);
-                throw error;
+                throw new server_error_1.ServerError('Failed to process video');
             }
         }
     }

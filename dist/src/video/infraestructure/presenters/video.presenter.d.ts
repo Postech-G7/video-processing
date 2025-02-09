@@ -1,20 +1,17 @@
 import { VideoOutput } from '../../application/dtos/video-output';
+import { CollectionPresenter } from '../../../shared/infraestructure/presenters/collection.presenter';
+import { ListVideosUseCase } from '../../application/usecases/list-videos.usecase';
 export declare class VideoPresenter {
     id: string;
     title: string;
-    userEmail: string;
     status: string;
-    path: string;
+    base64: string;
+    userId: string;
+    userEmail: string;
     createdAt: Date;
     constructor(output: VideoOutput);
 }
-export declare class VideoCollectionPresenter {
+export declare class VideoCollectionPresenter extends CollectionPresenter {
     data: VideoPresenter[];
-    meta: {
-        total: number;
-        currentPage: number;
-        perPage: number;
-        lastPage: number;
-    };
-    constructor(output: any);
+    constructor(output: ListVideosUseCase.Output);
 }

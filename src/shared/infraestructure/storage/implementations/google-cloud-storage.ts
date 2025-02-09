@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { cloudStorage } from '../config/cloud-storage.config';
 import { NotFoundError } from 'src/shared/domain/errors/not-found-error';
 import { BadRequestError } from 'src/shared/application/errors/bad-request-error';
+import * as path from 'path';
 
 export class GoogleCloudStorageService implements StorageInterface {
   private bucketName: string;
@@ -12,23 +13,28 @@ export class GoogleCloudStorageService implements StorageInterface {
     this.bucketName = process.env.GCLOUD_STORAGE_BUCKET;
   }
 
-  async upload(
-    file: Express.Multer.File,
-    destination: string
-  ): Promise<string> {
-    if (!file || !file.buffer) {
-      throw new BadRequestError('Video file not provided');
+  async upload(filePath: string, destination: string): Promise<string> {
+    try{
+    if (!fs.existsSync(filePath)) {
+      throw new BadRequestError('File not found for upload');
     }
 
-    const fileUpload = cloudStorage.file(destination + file.originalname);
-
-    await fileUpload.save(file.buffer, {
-      metadata: { contentType: file.mimetype },
+    const bucket = cloudStorage.bucket;
+    const fileName = path.basename(filePath);
+    const fileUpload = bucket.file(destination + fileName);
+    await bucket.upload(filePath, {
+      destination: fileUpload.name,
       resumable: false,
+      metadata: {
+        contentType: 'application/zip',
+      },
     });
-
-    return fileUpload.publicUrl();
+    return `https://storage.googleapis.com/${this.bucketName}/${fileUpload.name}`;
   }
+  catch(error){
+    throw error;
+  }
+}
 
   async download(fileId: string): Promise<Readable> {
     const bucketName = this.bucketName;
@@ -57,11 +63,13 @@ export class GoogleCloudStorageService implements StorageInterface {
 
   async delete(fileName: string): Promise<void> {
     //filename ou filepath?
-    await cloudStorage.file(fileName).delete();
+    const bucket = cloudStorage.bucket;
+    await bucket.file(fileName).delete();
   }
 
   async listFiles(prefix?: string): Promise<string[]> {
-    const [files] = await cloudStorage.getFiles({ prefix });
+    const bucket = cloudStorage.bucket
+    const [files] = await bucket.getFiles({ prefix });
     return files.map(file => file.name);
   }
 }

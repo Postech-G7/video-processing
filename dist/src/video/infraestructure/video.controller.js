@@ -18,7 +18,6 @@ const openapi = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const delete_processed_video_usecase_1 = require("../application/usecases/delete-processed-video.usecase");
 const retrieve_processed_video_usecase_1 = require("../application/usecases/retrieve-processed-video.usecase");
-const upload_processed_video_usecase_1 = require("../application/usecases/upload-processed-video.usecase");
 const upload_video_usecase_1 = require("../application/usecases/upload-video.usecase");
 const process_video_usecase_1 = require("../application/usecases/process-video.usecase");
 const get_video_usecase_1 = require("../application/usecases/get-video.usecase");
@@ -26,10 +25,8 @@ const update_video_1 = require("../application/usecases/update-video");
 const list_videos_usecase_1 = require("../application/usecases/list-videos.usecase");
 const list_videos_dto_1 = require("./dtos/list-videos.dto");
 const update_video_dto_1 = require("./dtos/update-video.dto");
-const upload_processed_video_dto_1 = require("./dtos/upload-processed-video.dto");
+const upload_video_dto_1 = require("./dtos/upload-video.dto");
 const video_presenter_1 = require("./presenters/video.presenter");
-const auth_guard_1 = require("../../auth/infraestructure/auth.guard");
-const auth_service_1 = require("../../auth/infraestructure/auth.service");
 const swagger_1 = require("@nestjs/swagger");
 let VideosController = VideosController_1 = class VideosController {
     static videoToResponse(output) {
@@ -38,33 +35,20 @@ let VideosController = VideosController_1 = class VideosController {
     static listVideosToResponse(output) {
         return new video_presenter_1.VideoCollectionPresenter(output);
     }
-    async upload(request, headers) {
-        try {
-            const data = await request.file();
-            const buffer = await data.toBuffer();
-            const file = {
-                buffer,
-                originalname: data.filename,
-                mimetype: data.mimetype,
-                size: buffer.length,
-                fieldname: data.fieldname,
-                encoding: '7bit',
-                destination: '',
-                filename: data.filename,
-                path: '',
-                stream: null,
-            };
-            return this.uploadVideoUseCase.execute({
-                video: file,
-                jwtToken: headers.authorization,
-            });
+    async upload(request, authHeader) {
+        const data = request.body.file;
+        if (!data) {
+            throw new Error('Nenhum arquivo enviado!');
         }
-        catch (error) {
-            throw new common_1.HttpException('Error processing file upload: ' + error.message, common_1.HttpStatus.BAD_REQUEST);
-        }
+        const fileBuffer = await data.toBuffer();
+        const jwtToken = authHeader.split(' ')[1];
+        return this.uploadVideoUseCase.execute({
+            file: { filename: data.filename, file: fileBuffer },
+            jwtToken,
+        });
     }
-    async uploadProcessed(uploadProcessedVideoDto) {
-        return this.uploadProcessedVideoUseCase.execute(uploadProcessedVideoDto);
+    async process(id) {
+        return this.processVideoUseCase.execute({ id });
     }
     async getVideo(id) {
         const output = await this.getVideoUseCase.execute({ id });
@@ -83,9 +67,6 @@ let VideosController = VideosController_1 = class VideosController {
     async updateStatus(id, updateVideoDto) {
         return this.updateVideoUseCase.execute({ id, ...updateVideoDto });
     }
-    async process(id) {
-        return this.processVideoUseCase.execute({ id });
-    }
 };
 exports.VideosController = VideosController;
 __decorate([
@@ -96,10 +77,6 @@ __decorate([
     (0, common_1.Inject)(retrieve_processed_video_usecase_1.RetrieveProcessedVideoUseCase.UseCase),
     __metadata("design:type", retrieve_processed_video_usecase_1.RetrieveProcessedVideoUseCase.UseCase)
 ], VideosController.prototype, "retrieveProcessedVideoUseCase", void 0);
-__decorate([
-    (0, common_1.Inject)(upload_processed_video_usecase_1.UploadProcessedVideoUseCase.UseCase),
-    __metadata("design:type", upload_processed_video_usecase_1.UploadProcessedVideoUseCase.UseCase)
-], VideosController.prototype, "uploadProcessedVideoUseCase", void 0);
 __decorate([
     (0, common_1.Inject)(upload_video_usecase_1.UploadVideoUseCase.UseCase),
     __metadata("design:type", upload_video_usecase_1.UploadVideoUseCase.UseCase)
@@ -121,28 +98,30 @@ __decorate([
     __metadata("design:type", list_videos_usecase_1.ListVideosUseCase.UseCase)
 ], VideosController.prototype, "listVideosUseCase", void 0);
 __decorate([
-    (0, common_1.Inject)(auth_service_1.AuthService),
-    __metadata("design:type", auth_service_1.AuthService)
-], VideosController.prototype, "authService", void 0);
-__decorate([
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(201),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiBody)({ type: upload_video_dto_1.UploadVideoDto }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Acesso não autorizado' }),
     (0, common_1.Post)('upload'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     openapi.ApiResponse({ status: 201, type: Object }),
     __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Headers)()),
+    __param(1, (0, common_1.Headers)('authorization')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], VideosController.prototype, "upload", null);
 __decorate([
-    (0, common_1.HttpCode)(201),
-    (0, common_1.Post)('upload-processed'),
-    openapi.ApiResponse({ status: 201 }),
-    __param(0, (0, common_1.Body)()),
+    (0, swagger_1.ApiResponse)({ status: 500, description: 'Erro ao processar video' }),
+    (0, common_1.HttpCode)(200),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.Post)('process/:id'),
+    openapi.ApiResponse({ status: 200, type: Object }),
+    __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [upload_processed_video_dto_1.UploadProcessedVideoDto]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
-], VideosController.prototype, "uploadProcessed", null);
+], VideosController.prototype, "process", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, swagger_1.ApiResponse)({
@@ -153,7 +132,6 @@ __decorate([
         status: 401,
         description: 'Acesso não autorizado',
     }),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     (0, common_1.Get)(':id'),
     openapi.ApiResponse({ status: 200, type: require("./presenters/video.presenter").VideoPresenter }),
     __param(0, (0, common_1.Param)('id')),
@@ -171,7 +149,6 @@ __decorate([
         status: 401,
         description: 'Acesso não autorizado',
     }),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     (0, common_1.Get)('processed/:id'),
     openapi.ApiResponse({ status: 200 }),
     __param(0, (0, common_1.Param)('id')),
@@ -189,7 +166,6 @@ __decorate([
         status: 401,
         description: 'Acesso não autorizado',
     }),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     (0, common_1.Delete)(':id'),
     openapi.ApiResponse({ status: 200 }),
     __param(0, (0, common_1.Param)('id')),
@@ -216,15 +192,6 @@ __decorate([
     __metadata("design:paramtypes", [String, update_video_dto_1.UpdateVideoDto]),
     __metadata("design:returntype", Promise)
 ], VideosController.prototype, "updateStatus", null);
-__decorate([
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.Post)('process/:id'),
-    openapi.ApiResponse({ status: 201, type: Object }),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], VideosController.prototype, "process", null);
 exports.VideosController = VideosController = VideosController_1 = __decorate([
     (0, swagger_1.ApiTags)('Videos'),
     (0, common_1.Controller)('videos')

@@ -20,7 +20,7 @@ async function bootstrap() {
       fileSize: 50 * 1024 * 1024, // 50MB
     },
     addToBody: false,
-    attachFieldsToBody: false,
+    attachFieldsToBody: true,
     throwFileSizeLimit: true,
     sharedSchemaId: '#mySharedSchema',
   });
