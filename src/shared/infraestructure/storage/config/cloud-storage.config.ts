@@ -5,7 +5,7 @@ const BUCKET_NAME = process.env.GCLOUD_STORAGE_BUCKET;
 const storage = process.env.NODE_ENV === "test" || !process.env.NODE_ENV
   ? new Storage({
       projectId: process.env.GCLOUD_PROJECT_ID,
-      keyFilename: process.env.GCLOUD_KEY_FILENAME,
+      keyFile: JSON.parse(process.env.GCP_SERVICE_ACCOUNT_KEY),
     })
   : new Storage({
       projectId: process.env.GCLOUD_PROJECT_ID,
