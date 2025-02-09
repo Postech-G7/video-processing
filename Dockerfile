@@ -37,10 +37,10 @@ chmod +x /app/start.sh
 
 # Environment variables
 ENV NODE_ENV=production
-ENV PORT=8080
+ENV PORT=3000
 
 # Expose port
-EXPOSE 8080
+EXPOSE 3000
 
 # Start the application using the startup script
 CMD ["/app/start.sh"]
