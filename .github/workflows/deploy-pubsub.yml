@@ -24,13 +24,9 @@ jobs:
         with:
           project_id: 'light-ratio-447800-d5'
 
-      - name: 'Deploy to Cloud Run'
+      - name: 'Create Pub/Sub topic'
         run: |
-          gcloud run deploy video-processing \
-            --image gcr.io/light-ratio-447800-d5/video-processing \
-            --platform managed \
-            --allow-unauthenticated \
-            --region us-central1
+          gcloud pubsub topics create videos-to-process
 
       - name: 'Create Pub/Sub subscription'
         run: |
@@ -40,9 +36,13 @@ jobs:
             --ack-deadline 10 \
             --enable-message-ordering
 
-      - name: 'Create Pub/Sub topic'
+      - name: 'Deploy to Cloud Run'
         run: |
-          gcloud pubsub topics create videos-to-process
+          gcloud run deploy video-processing \
+            --image gcr.io/light-ratio-447800-d5/video-processing \
+            --platform managed \
+            --allow-unauthenticated \
+            --region us-central1
 
       - name: 'Deploy upload function'
         run: |
