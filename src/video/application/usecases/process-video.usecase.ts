@@ -9,6 +9,7 @@ import { VideoOutput, VideoOutputMapper } from '../dtos/video-output';
 import { NotFoundError } from '../../../shared/domain/errors/not-found-error';
 import { GoogleCloudStorageService } from '../../../shared/infraestructure/storage/implementations/google-cloud-storage';
 import { ServerError } from '../../../shared/domain/errors/server-error';
+import { SendMessageUseCase } from './send-message.usecase';
 
 export namespace ProcessVideoUseCase {
   export type Input = {
@@ -187,6 +188,11 @@ export namespace ProcessVideoUseCase {
         await this.videoRepository.update(video);
 
         //ENVIAR MENSAGEM PARA CLIENTE
+        await SendMessageUseCase.execute({
+          videoId: video.id,
+          status: 'failed',
+          email: video.userEmail,
+        });
 
         throw new ServerError('Failed to process video');
       }

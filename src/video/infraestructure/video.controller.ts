@@ -43,6 +43,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { SendMessageUseCase } from '../application/usecases/send-message.usecase';
 
 @ApiTags('Videos')
 @Controller('videos')
@@ -184,5 +185,11 @@ export class VideosController {
     @Body() updateVideoDto: UpdateVideoDto,
   ) {
     return this.updateVideoUseCase.execute({ id, ...updateVideoDto });
+  }
+
+  @ApiBearerAuth()
+  @Post('send-message')
+  async sendMessage(@Body() data: any) {
+    return SendMessageUseCase.execute(data);
   }
 }
