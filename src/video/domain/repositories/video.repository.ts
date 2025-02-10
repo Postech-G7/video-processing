@@ -8,9 +8,9 @@ import {
 export namespace VideoRepository {
   export type Filter = string;
 
-  export class SearchParams extends DefaultSearchParams<Filter> {}
+  export class SearchParams extends DefaultSearchParams<Filter> { }
 
-  export class SearchResult extends DefaultSearchResult<VideoEntity, Filter> {}
+  export class SearchResult extends DefaultSearchResult<VideoEntity, Filter> { }
 
   export interface Repository
     extends SearchableRepositoryInterface<
@@ -18,5 +18,5 @@ export namespace VideoRepository {
       string,
       SearchParams,
       SearchResult
-    > {}
+    > { }
 }
