@@ -1,18 +1,14 @@
 import { PubSub } from '@google-cloud/pubsub';
 import * as path from 'path';
 
-if (!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
   throw new Error(
-    'GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable is not set',
+    'GOOGLE_APPLICATION_CREDENTIALS environment variable is not set',
   );
 }
 
-const keyFilePath = path.resolve(
-  process.cwd(),
-  process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
-);
 const pubsub = new PubSub({
-  keyFilename: keyFilePath,
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
   projectId: process.env.GCLOUD_PROJECT_ID,
 });
 
