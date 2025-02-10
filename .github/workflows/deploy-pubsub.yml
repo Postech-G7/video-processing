@@ -1,0 +1,41 @@
+name: Deploy Cloud Run with Pub/Sub Trigger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Check out repository'
+        uses: 'actions/checkout@v4'
+
+      - name: 'Authenticate to GCP'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.CI_CD_GCP_POSTECH_GRUPO7 }}'
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          project_id: 'light-ratio-447800-d5'
+
+      - name: 'Deploy to Cloud Run'
+        run: |
+          gcloud run deploy video-processing \
+            --image gcr.io/light-ratio-447800-d5/video-processing \
+            --platform managed \
+            --allow-unauthenticated \
+            --region us-central1
+
+      - name: 'Create Pub/Sub subscription'
+        run: |
+          gcloud pubsub subscriptions create videos-to-process-sub \
+            --topic videos-to-process \
+            --push-endpoint https://video-processing-470771286195.us-central1.run.app/videos/process/ \
+            --ack-deadline 10 \
+            --enable-message-ordering
