@@ -69,7 +69,6 @@ jobs:
             --set-secrets GCLOUD_PUBSUB_TOPIC=projects/470771286195/secrets/GCLOUD_PUBSUB_TOPIC:latest \
             --set-env-vars NODE_ENV=production \
             --set-env-vars NODE_TLS_REJECT_UNAUTHORIZED=0 \
-            --set-env-vars GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/google-application-credentials \
             --region us-central1 \
             --allow-unauthenticated \
             --memory 512Mi \

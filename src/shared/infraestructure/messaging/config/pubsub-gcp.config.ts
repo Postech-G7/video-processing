@@ -1,14 +1,10 @@
 import { PubSub } from '@google-cloud/pubsub';
-import * as path from 'path';
 
-if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-  throw new Error(
-    'GOOGLE_APPLICATION_CREDENTIALS environment variable is not set',
-  );
+if (!process.env.GCLOUD_PROJECT_ID) {
+  throw new Error('GCLOUD_PROJECT_ID environment variable is not set');
 }
 
 const pubsub = new PubSub({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
   projectId: process.env.GCLOUD_PROJECT_ID,
 });
 
