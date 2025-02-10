@@ -39,3 +39,15 @@ jobs:
             --push-endpoint https://video-processing-470771286195.us-central1.run.app/videos/process/ \
             --ack-deadline 10 \
             --enable-message-ordering
+
+      - name: 'Create Pub/Sub topic'
+        run: |
+          gcloud pubsub topics create videos-to-process
+
+      - name: 'Deploy upload function'
+        run: |
+          gcloud run deploy video-upload \
+            --image gcr.io/light-ratio-447800-d5/video-upload \
+            --platform managed \
+            --allow-unauthenticated \
+            --region us-central1
