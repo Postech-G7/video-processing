@@ -4,9 +4,16 @@ if (!process.env.GCLOUD_PROJECT_ID) {
   throw new Error('GCLOUD_PROJECT_ID environment variable is not set');
 }
 
-const pubsub = new PubSub({
-  projectId: process.env.GCLOUD_PROJECT_ID,
-});
+const pubsub =
+  process.env.NODE_ENV === 'test' || !process.env.NODE_ENV
+    ? new PubSub({
+        projectId: process.env.GCLOUD_PROJECT_ID,
+        keyFile: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+      })
+    : new PubSub({
+        projectId: process.env.GCLOUD_PROJECT_ID,
+        credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+      });
 
 if (!process.env.GCLOUD_PUBSUB_TOPIC) {
   throw new Error('GCLOUD_PUBSUB_TOPIC environment variable is not set');
