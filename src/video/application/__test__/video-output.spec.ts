@@ -5,7 +5,7 @@ describe('VideoOutputMapper', () => {
   describe('toOutput', () => {
     it('should map a VideoEntity to a VideoOutput object with all fields', () => {
       const mockEntity = new VideoEntity({
-        id: 'video123',
+        //id: 'video123',
         title: 'Test Video',
         createdAt: new Date(),
         status: 'processing',
@@ -31,7 +31,7 @@ describe('VideoOutputMapper', () => {
 
     it('should map a VideoEntity to a VideoOutput object with optional fields undefined', () => {
       const mockEntity = new VideoEntity({
-        id: 'video123',
+        //id: 'video123',
         title: 'Test Video',
         createdAt: new Date(),
         status: 'completed',

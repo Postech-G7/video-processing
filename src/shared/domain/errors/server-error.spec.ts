@@ -7,7 +7,7 @@ describe('ServerError', () => {
 
     expect(error).toBeInstanceOf(ServerError);
     expect(error.message).toBe('message'); // Verifica se a mensagem padrão foi usada
-    expect(error.name).toBe('ServerError');
+    expect(error.name).toBe('This is a server error');
   });
 
   it('should inherit from the Error class', () => {

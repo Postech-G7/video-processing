@@ -1,5 +1,4 @@
 import { VideoCollectionPresenter, VideoPresenter } from './video.presenter';
-//import { VideoCollectionPresenter } from '../video-collection.presenter';
 import { ListVideosUseCase } from '../../application/usecases/list-videos.usecase';
 
 describe('VideoPresenter', () => {
@@ -7,7 +6,7 @@ describe('VideoPresenter', () => {
     const mockVideoOutput = {
       id: 'video123',
       title: 'Test Video',
-      status: 'completed',
+      status: 'completed' as const,
       base64: 'base64-encoded-string',
       userId: 'user456',
       userEmail: 'test@example.com',
