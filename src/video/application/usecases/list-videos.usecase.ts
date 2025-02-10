@@ -13,7 +13,7 @@ export namespace ListVideosUseCase {
   export type Output = PaginationOutput<VideoOutput>;
 
   export class UseCase implements DefaultUseCase<Input, Output> {
-    constructor(private videoRepository: VideoRepository.Repository) {}
+    constructor(private videoRepository: VideoRepository.Repository) { }
 
     async execute(input: Input): Promise<Output> {
       const params = new VideoRepository.SearchParams(input);
@@ -22,7 +22,7 @@ export namespace ListVideosUseCase {
     }
 
     private toOutput(searchResult: VideoRepository.SearchResult): Output {
-      const items = searchResult.items.map(entity => {
+      const items = searchResult.items.map((entity) => {
         return VideoOutputMapper.toOutput(entity);
       });
       return PaginationOutputMapper.toOutput(items, searchResult);

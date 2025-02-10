@@ -21,7 +21,7 @@ export class VideoOutputMapper {
       userId: entity.userId,
       userEmail: entity.userEmail,
       base64: entity.base64,
-      processedVideoUrl: entity.processedVideoUrl 
+      processedVideoUrl: entity.processedVideoUrl,
     };
   }
 }

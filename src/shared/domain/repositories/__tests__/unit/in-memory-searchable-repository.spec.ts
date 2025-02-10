@@ -9,7 +9,7 @@ import {
 const props = userDataBuilder();
 
 type StubEntityProps = typeof props;
-class StubEntity extends Entity<StubEntityProps> {}
+class StubEntity extends Entity<StubEntityProps> { }
 
 type Filter = string;
 
@@ -17,13 +17,13 @@ class StubRepository extends SearchableInMemoryRepository<StubEntity, Filter> {
   sortableFields: string[] = ['name'];
   protected async applyFilter(
     items: StubEntity[],
-    name: Filter
+    name: Filter,
   ): Promise<StubEntity[]> {
     if (!name) {
       return items;
     }
-    return items.filter(item =>
-      item.props.name.toLocaleLowerCase().includes(name.toLocaleLowerCase())
+    return items.filter((item) =>
+      item.props.name.toLocaleLowerCase().includes(name.toLocaleLowerCase()),
     );
   }
 }
@@ -63,21 +63,21 @@ describe('SearchableInMemoryRepository unit tests', () => {
 
       const filteredUpperCase = await sut['applyFilter'](
         items,
-        entity.props.name.toUpperCase()
+        entity.props.name.toUpperCase(),
       );
       expect(filteredUpperCase).toStrictEqual([entity]);
       expect(spyFilterMethod).toHaveBeenCalledTimes(2);
 
       const filteredLowerCase = await sut['applyFilter'](
         items,
-        entity.props.name.toLowerCase()
+        entity.props.name.toLowerCase(),
       );
       expect(filteredLowerCase).toStrictEqual([entity]);
       expect(spyFilterMethod).toHaveBeenCalledTimes(3);
 
       const filteredWithoutItemsResult = await sut['applyFilter'](
         items,
-        'fake'
+        'fake',
       );
       expect(filteredWithoutItemsResult).toStrictEqual([]);
       expect(spyFilterMethod).toHaveBeenCalledTimes(4);
@@ -140,7 +140,7 @@ describe('SearchableInMemoryRepository unit tests', () => {
       const paginatedWithoutNextPage = await sut['applyPagination'](
         items,
         4,
-        2
+        2,
       );
       expect(paginatedWithoutNextPage).toStrictEqual([]);
     });
@@ -163,7 +163,7 @@ describe('SearchableInMemoryRepository unit tests', () => {
           sort: null,
           sortDir: null,
           filter: null,
-        })
+        }),
       );
       expect(searchResultParams.items).toHaveLength(15);
       expect(searchResultParams.total).toBe(16);
