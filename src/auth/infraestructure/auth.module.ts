@@ -20,4 +20,4 @@ import { EnvConfigService } from '../../shared/infraestructure/env-config/env-co
   providers: [AuthService],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }

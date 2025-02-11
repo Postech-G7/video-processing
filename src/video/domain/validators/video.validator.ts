@@ -1,4 +1,4 @@
-import { ClassValidatorFields } from 'src/shared/domain/validators/class-validator-fields';
+import { ClassValidatorFields } from '../../../shared/domain/validators/class-validator-fields';
 import { VideoProps } from '../entities/video.entity';
 import {
   IsDate,

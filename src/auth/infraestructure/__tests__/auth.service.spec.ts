@@ -12,6 +12,11 @@ describe('AuthService unit tests', () => {
   let configService = new ConfigService();
   let envConfigService: EnvConfigService;
 
+  const user = {
+    userId: 'fakeId',
+    userEmail: 'e@e.com',
+  };
+
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [EnvConfigModule, JwtModule],
@@ -38,20 +43,20 @@ describe('AuthService unit tests', () => {
   });
 
   it('should return a jwt', async () => {
-    const result = await sut.generateJwt('fakeId');
+    const result = await sut.generateJwt(user);
     expect(Object.keys(result)).toEqual(['accessToken']);
     expect(typeof result.accessToken).toEqual('string');
   });
 
   it('should verify a jwt', async () => {
-    const result = await sut.generateJwt('fakeId');
+    const result = await sut.generateJwt(user);
     const validToken = await sut.verifyJwt(result.accessToken);
     expect(validToken).not.toBeNull();
     await expect(sut.verifyJwt('fake')).rejects.toThrow();
     await expect(
       sut.verifyJwt(
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
-      )
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+      ),
     ).rejects.toThrow();
   });
 });

@@ -3,8 +3,7 @@ import { NotFoundError } from '../errors/not-found-error';
 import { RepositoryInterface } from './repositories-contracts';
 
 export abstract class InMemoryRepository<E extends Entity>
-  implements RepositoryInterface<E>
-{
+  implements RepositoryInterface<E> {
   items: E[] = [];
 
   async insert(entity: E): Promise<void> {
@@ -28,7 +27,7 @@ export abstract class InMemoryRepository<E extends Entity>
   }
   protected async _get(id: string): Promise<E> {
     const _id = `${id}`;
-    const entity = this.items.find(item => item._id === _id);
+    const entity = this.items.find((item) => item._id === _id);
     if (!entity) {
       throw new NotFoundError('Entity not found');
     }
@@ -36,7 +35,7 @@ export abstract class InMemoryRepository<E extends Entity>
   }
   protected _getIndex(id: string): number {
     const _id = `${id}`;
-    const index = this.items.findIndex(item => item._id === _id);
+    const index = this.items.findIndex((item) => item._id === _id);
     if (index === -1) {
       throw new NotFoundError('Entity not found');
     }
