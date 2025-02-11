@@ -14,7 +14,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
-import { DeleteProcessedVideoUseCase } from '../application/usecases/delete-processed-video.usecase';
+import { DeleteProcessedVideoUseCase } from '../application/usecases/delete-video.usecase';
 import { RetrieveProcessedVideoUseCase } from '../application/usecases/retrieve-processed-video.usecase';
 // import { UploadProcessedVideoUseCase } from '../application/usecases/upload-processed-video.usecase';
 import { UploadVideoUseCase } from '../application/usecases/upload-video.usecase';
